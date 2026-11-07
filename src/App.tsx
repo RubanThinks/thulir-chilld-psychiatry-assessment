@@ -50,6 +50,10 @@ export function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === 'object') {
+          // Clear any legacy demo unsplash photo
+          if (parsed.studentPhoto && parsed.studentPhoto.includes('unsplash.com')) {
+            parsed.studentPhoto = '';
+          }
           return parsed;
         }
       }

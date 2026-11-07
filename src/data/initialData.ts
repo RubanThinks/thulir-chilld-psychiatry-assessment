@@ -208,7 +208,7 @@ export const emptyAssessment: AssessmentData = {
 
 export const sampleDemoAssessment: AssessmentData = {
   // Page 1
-  studentPhoto: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=240&auto=format&fit=crop&q=80',
+  studentPhoto: '',
   name: 'Aarav Krishnan',
   ageSex: '4 Years 6 Months / Male',
   ageYears: '4',
