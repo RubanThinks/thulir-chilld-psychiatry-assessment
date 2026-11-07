@@ -26,6 +26,7 @@ interface Props {
   onLoadAssessment: (data: AssessmentData, cloudDocId: string) => void;
   activeDocId: string | null;
   onDocIdChange: (id: string | null) => void;
+  onSaved?: () => void;
 }
 
 export const CloudAssessmentsModal: React.FC<Props> = ({
@@ -35,6 +36,7 @@ export const CloudAssessmentsModal: React.FC<Props> = ({
   onLoadAssessment,
   activeDocId,
   onDocIdChange,
+  onSaved,
 }) => {
   const [assessments, setAssessments] = useState<CloudAssessmentSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -77,6 +79,7 @@ export const CloudAssessmentsModal: React.FC<Props> = ({
         text: `Successfully saved "${currentData.name || 'Assessment'}" to Firebase!`,
       });
       await fetchAssessments();
+      if (onSaved) onSaved();
     } catch (err: any) {
       console.error('Error saving to Firestore:', err);
       setStatusMessage({
@@ -126,6 +129,7 @@ export const CloudAssessmentsModal: React.FC<Props> = ({
         type: 'success',
         text: 'Assessment removed from Firebase cloud.',
       });
+      if (onSaved) onSaved();
     } catch (err: any) {
       alert(`Could not delete: ${err.message}`);
     }

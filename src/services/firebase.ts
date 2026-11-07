@@ -47,9 +47,16 @@ if (typeof window !== 'undefined') {
 export interface CloudAssessmentSummary {
   id: string;
   studentName: string;
+  studentPhoto?: string;
   ageSex: string;
+  dob?: string;
+  diagnosis?: string;
+  parentsGuardians?: string;
   doe: string;
+  consultantName?: string;
   updatedAtText: string;
+  updatedAtMillis?: number;
+  data?: AssessmentData;
 }
 
 /**
@@ -57,15 +64,21 @@ export interface CloudAssessmentSummary {
  */
 export async function saveAssessmentToCloud(data: AssessmentData, existingId?: string): Promise<string> {
   const cleanName = (data.name || 'Student').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
-  const docId = existingId || `${cleanName}_${Date.now()}`;
+  const cleanDoe = (data.doe || 'Eval').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+  const docId = existingId || `${cleanName}_${cleanDoe}_${Date.now()}`;
 
   const docRef = doc(db, 'assessments', docId);
   await setDoc(
     docRef,
     {
       studentName: data.name || 'Unnamed Student',
+      studentPhoto: data.studentPhoto || '',
+      dob: data.dob || '',
       ageSex: data.ageSex || '',
+      diagnosis: data.diagnosis || '',
+      parentsGuardians: data.parentsGuardians || '',
       doe: data.doe || '',
+      consultantName: data.consultant?.name || '',
       updatedAt: serverTimestamp(),
       data: data,
     },
@@ -92,19 +105,31 @@ export async function listCloudAssessments(): Promise<CloudAssessmentSummary[]> 
   return snap.docs.map((docSnap) => {
     const d = docSnap.data();
     let dateStr = 'Recently';
+    let millis = 0;
     if (d.updatedAt?.toDate) {
-      dateStr = d.updatedAt.toDate().toLocaleString([], {
+      const jsDate = d.updatedAt.toDate();
+      millis = jsDate.getTime();
+      dateStr = jsDate.toLocaleString([], {
         dateStyle: 'medium',
         timeStyle: 'short',
       });
     }
 
+    const assessmentPayload = (d.data || {}) as Partial<AssessmentData>;
+
     return {
       id: docSnap.id,
-      studentName: d.studentName || d.data?.name || 'Unnamed Student',
-      ageSex: d.ageSex || d.data?.ageSex || '',
-      doe: d.doe || d.data?.doe || '',
+      studentName: d.studentName || assessmentPayload.name || 'Unnamed Student',
+      studentPhoto: d.studentPhoto || assessmentPayload.studentPhoto || '',
+      ageSex: d.ageSex || assessmentPayload.ageSex || '',
+      dob: d.dob || assessmentPayload.dob || '',
+      diagnosis: d.diagnosis || assessmentPayload.diagnosis || '',
+      parentsGuardians: d.parentsGuardians || assessmentPayload.parentsGuardians || '',
+      doe: d.doe || assessmentPayload.doe || '',
+      consultantName: d.consultantName || assessmentPayload.consultant?.name || '',
       updatedAtText: dateStr,
+      updatedAtMillis: millis,
+      data: d.data as AssessmentData,
     };
   });
 }

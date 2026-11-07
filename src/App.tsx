@@ -11,6 +11,8 @@ import { LanguageSelfCareSection } from './components/form/sections/LanguageSelf
 import { SensoryAutismSection } from './components/form/sections/SensoryAutismSection';
 import { StandardTestsPlanSection } from './components/form/sections/StandardTestsPlanSection';
 import { CloudAssessmentsModal } from './components/common/CloudAssessmentsModal';
+import { StudentDirectory } from './components/records/StudentDirectory';
+import { listCloudAssessments, type CloudAssessmentSummary } from './services/firebase';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import {
@@ -25,11 +27,12 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
-  Save,
   Menu,
   X,
   Loader2,
-  Cloud
+  Cloud,
+  Users,
+  Save
 } from 'lucide-react';
 
 const SECTIONS = [
@@ -64,13 +67,32 @@ export function App() {
   });
 
   const [activeStep, setActiveStep] = useState(1);
-  const [viewMode, setViewMode] = useState<'editor' | 'preview' | 'split'>('editor');
+  const [viewMode, setViewMode] = useState<'editor' | 'preview' | 'split' | 'directory'>('editor');
   const [zoomScale, setZoomScale] = useState(1);
   const [lastSavedTime, setLastSavedTime] = useState<string>('Just now');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
+  const [cloudAssessments, setCloudAssessments] = useState<CloudAssessmentSummary[]>([]);
+  const [isLoadingAssessments, setIsLoadingAssessments] = useState(false);
+
+  // Load Cloud Assessments List from Firebase Firestore
+  const loadCloudList = async () => {
+    setIsLoadingAssessments(true);
+    try {
+      const list = await listCloudAssessments();
+      setCloudAssessments(list);
+    } catch (err) {
+      console.error('Error fetching cloud assessments:', err);
+    } finally {
+      setIsLoadingAssessments(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCloudList();
+  }, []);
 
   // Auto-save to localStorage
   useEffect(() => {
@@ -231,6 +253,27 @@ export function App() {
               <Columns className="w-3.5 h-3.5" />
               Split Screen
             </button>
+            <button
+              onClick={() => {
+                setViewMode('directory');
+                loadCloudList();
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-none ${
+                viewMode === 'directory'
+                  ? 'bg-teal-700 text-white'
+                  : 'text-slate-800 hover:bg-slate-200'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Student Records</span>
+              {cloudAssessments.length > 0 && (
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  viewMode === 'directory' ? 'bg-teal-900 text-white' : 'bg-slate-200 text-slate-800'
+                }`}>
+                  {cloudAssessments.length}
+                </span>
+              )}
+            </button>
           </div>
 
           {/* Action Buttons: Direct PDF Download & Print */}
@@ -281,6 +324,16 @@ export function App() {
               >
                 <Eye className="w-4 h-4" />
               </button>
+              <button
+                onClick={() => {
+                  setViewMode('directory');
+                  loadCloudList();
+                }}
+                className={`p-1.5 rounded font-bold ${viewMode === 'directory' ? 'bg-teal-700 text-white' : 'text-slate-800'}`}
+                title="Student Records Directory"
+              >
+                <Users className="w-4 h-4" />
+              </button>
             </div>
 
             {/* Mobile Menu Button */}
@@ -323,13 +376,24 @@ export function App() {
             <div className="flex flex-col gap-2 pb-2 border-b border-slate-200">
               <button
                 onClick={() => {
+                  setViewMode('directory');
+                  loadCloudList();
+                  setMobileMenuOpen(false);
+                }}
+                className="px-3 py-2 text-xs font-bold text-slate-900 bg-slate-100 border border-slate-300 rounded w-full inline-flex items-center justify-center gap-1.5"
+              >
+                <Users className="w-4 h-4 text-teal-800" />
+                <span>Student Directory ({cloudAssessments.length})</span>
+              </button>
+              <button
+                onClick={() => {
                   setIsCloudModalOpen(true);
                   setMobileMenuOpen(false);
                 }}
                 className="px-3 py-2 text-xs font-bold text-teal-900 bg-teal-50 border border-teal-300 rounded inline-flex items-center justify-center gap-1.5 w-full"
               >
                 <Cloud className="w-4 h-4 text-teal-700" />
-                <span>Cloud Assessments (Firebase)</span>
+                <span>Save / Sync Cloud (Firebase)</span>
                 {activeDocId && (
                   <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block"></span>
                 )}
@@ -617,6 +681,54 @@ export function App() {
             </div>
           </div>
         )}
+
+        {/* VIEW 3: STUDENT RECORDS & ASSESSMENT DIRECTORY */}
+        {viewMode === 'directory' && (
+          <StudentDirectory
+            assessments={cloudAssessments}
+            isLoading={isLoadingAssessments}
+            onRefresh={loadCloudList}
+            onSelectAssessment={(selData, docId, targetView) => {
+              setData(selData);
+              setActiveDocId(docId);
+              setActiveStep(1);
+              setViewMode(targetView);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onNewAssessmentForStudent={(studentDemo) => {
+              const followUpData: AssessmentData = {
+                ...emptyAssessment,
+                name: studentDemo.name || '',
+                studentPhoto: studentDemo.studentPhoto || '',
+                dob: studentDemo.dob || '',
+                ageSex: studentDemo.ageSex || '',
+                parentsGuardians: studentDemo.parentsGuardians || '',
+                address: studentDemo.address || '',
+                diagnosis: studentDemo.diagnosis || '',
+                doe: new Date().toISOString().split('T')[0],
+              };
+              setData(followUpData);
+              setActiveDocId(null); // Fresh document in cloud, so it won't overwrite past assessments!
+              setActiveStep(1);
+              setViewMode('editor');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onStartBlankAssessment={() => {
+              setData(emptyAssessment);
+              setActiveDocId(null);
+              setActiveStep(1);
+              setViewMode('editor');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onDownloadPdfForData={(targetData) => {
+              setData(targetData);
+              setTimeout(() => {
+                handleDownloadDirectPdf();
+              }, 120);
+            }}
+            activeDocId={activeDocId}
+          />
+        )}
       </main>
 
       {/* ========================================================
@@ -624,7 +736,7 @@ export function App() {
           Ensures that whenever window.print() or PDF export runs,
           ONLY the authentic 8-page document prints, with 0% UI leaking!
          ======================================================== */}
-      {viewMode === 'editor' && (
+      {viewMode !== 'preview' && (
         <div className="fixed top-0 left-0 opacity-0 pointer-events-none -z-50 print:opacity-100 print:z-auto print:static">
           <AssessmentReport data={data} />
         </div>
@@ -642,6 +754,7 @@ export function App() {
         }}
         activeDocId={activeDocId}
         onDocIdChange={setActiveDocId}
+        onSaved={loadCloudList}
       />
     </div>
   );
