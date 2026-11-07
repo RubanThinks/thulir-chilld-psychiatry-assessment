@@ -9,9 +9,9 @@ interface AssessmentReportProps {
 
 // Reusable Checkbox Component for PDF/Report View
 const ReportCheckbox: React.FC<{ checked: boolean; label?: string }> = ({ checked, label }) => (
-  <span className="inline-flex items-center gap-1.5 mr-3 select-none text-[11.5px] document-font shrink-0">
+  <span className="inline-flex items-center gap-1.5 mr-3 select-none text-[12.5px] document-font shrink-0">
     <span
-      className={`inline-flex items-center justify-center w-3.5 h-3.5 border border-black bg-white font-bold text-[10px] leading-none shrink-0 ${
+      className={`inline-flex items-center justify-center w-4 h-4 border border-black bg-white font-bold text-[11px] leading-none shrink-0 ${
         checked ? 'text-black' : 'text-transparent'
       }`}
     >
@@ -28,110 +28,114 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
           PAGE 1: DEMOGRAPHICS & CHIEF COMPLAINTS & BIRTH HISTORY
          ======================================================== */}
       <section className="a4-page a4-page-screen page-break bg-white text-black print:shadow-none print:border-none">
-        <div className="assessment-border flex flex-col justify-between">
-          <div>
-            <ThulirHeader />
+        <div className="assessment-border">
+          <ThulirHeader />
 
-            {/* Demographics Section */}
-            <div className="mt-1">
-              <h2 className="font-bold text-[12px] mb-2 uppercase tracking-wide text-black">Demographic data</h2>
+          {/* Demographics Section */}
+          <div className="mt-2 mb-3">
+            <h2 className="font-bold text-[13.5px] mb-2 uppercase tracking-wide text-black">Demographic data</h2>
 
-              <div className="flex gap-4 items-start">
-                {/* Left: Info items */}
-                <div className="flex-1 space-y-1.5 text-[11.5px]">
-                  <div className="flex items-start">
-                    <span className="w-36 shrink-0 font-semibold text-black">Name</span>
-                    <span className="w-3 shrink-0 text-center">:</span>
-                    <span className="flex-1 font-bold text-black uppercase break-words">{data.name || ''}</span>
-                  </div>
-
-                  <div className="flex items-start">
-                    <span className="w-36 shrink-0 font-semibold text-black">Age / sex</span>
-                    <span className="w-3 shrink-0 text-center">:</span>
-                    <span className="flex-1 font-medium text-black break-words">{data.ageSex || ''}</span>
-                  </div>
-
-                  <div className="flex items-start">
-                    <span className="w-36 shrink-0 font-semibold text-black">DOB</span>
-                    <span className="w-3 shrink-0 text-center">:</span>
-                    <span className="flex-1 text-black break-words">{data.dob || ''}</span>
-                  </div>
-
-                  <div className="flex items-start">
-                    <span className="w-36 shrink-0 font-semibold text-black">DOE</span>
-                    <span className="w-3 shrink-0 text-center">:</span>
-                    <span className="flex-1 text-black break-words">{data.doe || ''}</span>
-                  </div>
-
-                  <div className="flex items-start">
-                    <span className="w-36 shrink-0 font-semibold text-black">Parents &amp; Guardians</span>
-                    <span className="w-3 shrink-0 text-center">:</span>
-                    <span className="flex-1 text-black leading-snug break-words">{data.parentsGuardians || ''}</span>
-                  </div>
-
-                  <div className="flex items-start">
-                    <span className="w-36 shrink-0 font-semibold text-black">Address</span>
-                    <span className="w-3 shrink-0 text-center">:</span>
-                    <span className="flex-1 text-black leading-snug break-words">{data.address || ''}</span>
-                  </div>
-
-                  <div className="flex items-start pt-0.5">
-                    <span className="w-36 shrink-0 font-semibold text-black">Diagnosis</span>
-                    <span className="w-3 shrink-0 text-center">:</span>
-                    <span className="flex-1 font-bold text-black leading-snug break-words">{data.diagnosis || ''}</span>
-                  </div>
-
-                  <div className="flex items-start">
-                    <span className="w-36 shrink-0 font-semibold text-black">Reference</span>
-                    <span className="w-3 shrink-0 text-center">:</span>
-                    <span className="flex-1 text-black leading-snug break-words">{data.reference || ''}</span>
-                  </div>
+            <div className="flex gap-4 items-start">
+              {/* Left: Info items */}
+              <div className="flex-1 space-y-2 text-[12.5px]">
+                <div className="flex items-start">
+                  <span className="w-44 shrink-0 font-semibold text-black">Name</span>
+                  <span className="w-3 shrink-0 text-center">:</span>
+                  <span className="flex-1 font-bold text-black uppercase break-words">{data.name || ''}</span>
                 </div>
 
-                {/* Right: Student Passport Photo Box */}
-                <div className="w-28 h-36 shrink-0 border border-black flex items-center justify-center bg-white overflow-hidden">
-                  {data.studentPhoto ? (
-                    <img
-                      src={data.studentPhoto}
-                      alt="Student"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="text-center p-2 text-slate-400 text-[10px] uppercase font-semibold">
-                      Student Photo
-                    </div>
-                  )}
+                <div className="flex items-start">
+                  <span className="w-44 shrink-0 font-semibold text-black">Age / sex</span>
+                  <span className="w-3 shrink-0 text-center">:</span>
+                  <span className="flex-1 font-medium text-black break-words">{data.ageSex || ''}</span>
                 </div>
+
+                <div className="flex items-start">
+                  <span className="w-44 shrink-0 font-semibold text-black">DOB</span>
+                  <span className="w-3 shrink-0 text-center">:</span>
+                  <span className="flex-1 text-black break-words">{data.dob || ''}</span>
+                </div>
+
+                <div className="flex items-start">
+                  <span className="w-44 shrink-0 font-semibold text-black">DOE</span>
+                  <span className="w-3 shrink-0 text-center">:</span>
+                  <span className="flex-1 text-black break-words">{data.doe || ''}</span>
+                </div>
+
+                <div className="flex items-start">
+                  <span className="w-44 shrink-0 font-semibold text-black">Parents &amp; Guardians</span>
+                  <span className="w-3 shrink-0 text-center">:</span>
+                  <span className="flex-1 text-black leading-snug break-words">{data.parentsGuardians || ''}</span>
+                </div>
+
+                <div className="flex items-start">
+                  <span className="w-44 shrink-0 font-semibold text-black">Address</span>
+                  <span className="w-3 shrink-0 text-center">:</span>
+                  <span className="flex-1 text-black leading-snug break-words">{data.address || ''}</span>
+                </div>
+
+                <div className="flex items-start pt-1">
+                  <span className="w-44 shrink-0 font-semibold text-black">Diagnosis</span>
+                  <span className="w-3 shrink-0 text-center">:</span>
+                  <span className="flex-1 font-bold text-black leading-snug break-words">{data.diagnosis || ''}</span>
+                </div>
+
+                <div className="flex items-start">
+                  <span className="w-44 shrink-0 font-semibold text-black">Reference</span>
+                  <span className="w-3 shrink-0 text-center">:</span>
+                  <span className="flex-1 text-black leading-snug break-words">{data.reference || ''}</span>
+                </div>
+              </div>
+
+              {/* Right: Student Passport Photo Box */}
+              <div className="w-32 h-44 shrink-0 border border-black flex items-center justify-center bg-white overflow-hidden shadow-sm">
+                {data.studentPhoto ? (
+                  <img
+                    src={data.studentPhoto}
+                    alt="Student"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="text-center p-2 text-slate-400 text-[11px] uppercase font-semibold">
+                    Passport Photo
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Chief Complaints - Generous proportional height */}
-          <div className="pt-2 text-[11.5px] flex-1 flex flex-col justify-start">
-            <div className="font-bold text-[12px] text-black mb-1">Chief Complaints :</div>
-            <p className="text-black leading-relaxed text-justify break-words min-h-[80px]">
-              {data.chiefComplaints || ''}
-            </p>
+          {/* Chief Complaints */}
+          <div className="mt-4 text-[12.5px]">
+            <div className="font-bold text-[13.5px] text-black mb-1">Chief Complaints :</div>
+            <div className="min-h-[130px]">
+              <p className="text-black leading-relaxed text-justify break-words">
+                {data.chiefComplaints || ''}
+              </p>
+            </div>
           </div>
 
-          {/* Birth History - Formatted to fill down to bottom border */}
-          <div className="pt-2 text-[11.5px] space-y-2.5">
-            <div className="font-bold text-[12px] text-black">Birth history :</div>
+          {/* Birth History */}
+          <div className="mt-4 text-[12.5px] space-y-3">
+            <div className="font-bold text-[13.5px] text-black mb-1">Birth history :</div>
 
-            <div className="space-y-2">
-              <div className="flex items-start">
-                <span className="w-24 shrink-0 font-bold text-black">Prenatal :</span>
-                <p className="flex-1 text-black leading-relaxed break-words min-h-[44px]">{data.birthHistory.prenatal || ''}</p>
+            <div>
+              <span className="font-bold text-black block mb-1">Prenatal :</span>
+              <div className="min-h-[80px]">
+                <p className="text-black leading-relaxed break-words pl-1">{data.birthHistory.prenatal || ''}</p>
               </div>
+            </div>
 
-              <div className="flex items-start">
-                <span className="w-24 shrink-0 font-bold text-black">Perinatal :</span>
-                <p className="flex-1 text-black leading-relaxed break-words min-h-[44px]">{data.birthHistory.perinatal || ''}</p>
+            <div>
+              <span className="font-bold text-black block mb-1">Perinatal :</span>
+              <div className="min-h-[80px]">
+                <p className="text-black leading-relaxed break-words pl-1">{data.birthHistory.perinatal || ''}</p>
               </div>
+            </div>
 
-              <div className="flex items-start">
-                <span className="w-24 shrink-0 font-bold text-black">Postnatal :</span>
-                <p className="flex-1 text-black leading-relaxed break-words min-h-[44px]">{data.birthHistory.postnatal || ''}</p>
+            <div>
+              <span className="font-bold text-black block mb-1">Postnatal :</span>
+              <div className="min-h-[80px]">
+                <p className="text-black leading-relaxed break-words pl-1">{data.birthHistory.postnatal || ''}</p>
               </div>
             </div>
           </div>
@@ -142,23 +146,25 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
           PAGE 2: MEDICAL, FAMILY, EDUCATION & OBSERVATION
          ======================================================== */}
       <section className="a4-page a4-page-screen page-break bg-white text-black print:shadow-none print:border-none">
-        <div className="assessment-border flex flex-col justify-between text-[11.5px]">
-          {/* Present Medical History - Generous top block */}
-          <div className="space-y-1">
-            <div className="font-bold text-[12px] text-black">Present Medical History :</div>
-            <p className="text-black leading-relaxed text-justify min-h-[140px] break-words">
-              {data.presentMedicalHistory || ''}
-            </p>
+        <div className="assessment-border text-[12.5px]">
+          {/* Present Medical History */}
+          <div className="mb-5">
+            <div className="font-bold text-[13.5px] text-black mb-1.5">Present Medical History :</div>
+            <div className="min-h-[160px]">
+              <p className="text-black leading-relaxed text-justify break-words">
+                {data.presentMedicalHistory || ''}
+              </p>
+            </div>
           </div>
 
           {/* Family History */}
-          <div className="space-y-2.5 pt-2">
-            <div className="font-bold text-[12px] text-black">Family History</div>
+          <div className="mb-5 space-y-3">
+            <div className="font-bold text-[13.5px] text-black mb-1.5">Family History</div>
 
             <div className="flex items-start">
-              <span className="w-48 shrink-0 font-semibold text-black">Family tree</span>
+              <span className="w-56 shrink-0 font-semibold text-black">Family tree</span>
               <span className="w-3 shrink-0 text-center">:</span>
-              <div className="flex-1">
+              <div className="flex-1 min-h-[70px]">
                 {data.familyHistory.familyTreeImage && (
                   <img
                     src={data.familyHistory.familyTreeImage}
@@ -171,31 +177,31 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
             </div>
 
             <div className="flex items-center">
-              <span className="w-48 shrink-0 font-semibold text-black">Consanguinity</span>
+              <span className="w-56 shrink-0 font-semibold text-black">Consanguinity</span>
               <span className="w-3 shrink-0 text-center">:</span>
               <div className="flex-1 flex flex-wrap items-center gap-2">
                 <ReportCheckbox checked={data.familyHistory.consanguinity === 'Yes'} label="Yes" />
                 <ReportCheckbox checked={data.familyHistory.consanguinity === 'No'} label="No" />
-                <span className="text-[11px] text-black">
+                <span className="text-[12px] text-black">
                   (if yes specify) <span className="font-medium underline-offset-2 break-words">{data.familyHistory.consanguinityDetails || ''}</span>
                 </span>
               </div>
             </div>
 
             <div className="flex items-start">
-              <span className="w-48 shrink-0 font-semibold text-black leading-tight">Specific family history of relevant illness</span>
+              <span className="w-56 shrink-0 font-semibold text-black leading-tight">Specific family history of relevant illness</span>
               <span className="w-3 shrink-0 text-center">:</span>
               <div className="flex-1 flex flex-wrap items-center gap-2">
                 <ReportCheckbox checked={data.familyHistory.specificIllness === 'Yes'} label="Yes" />
                 <ReportCheckbox checked={data.familyHistory.specificIllness === 'No'} label="No" />
-                <span className="text-[11px] text-black">
+                <span className="text-[12px] text-black">
                   (if yes specify) <span className="font-medium underline-offset-2 break-words">{data.familyHistory.specificIllnessDetails || ''}</span>
                 </span>
               </div>
             </div>
 
             <div className="flex items-center">
-              <span className="w-48 shrink-0 font-semibold text-black">Economic status</span>
+              <span className="w-56 shrink-0 font-semibold text-black">Economic status</span>
               <span className="w-3 shrink-0 text-center">:</span>
               <div className="flex-1 flex items-center gap-3">
                 <ReportCheckbox checked={data.familyHistory.economicStatus === 'UC'} label="UC" />
@@ -207,40 +213,44 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
           </div>
 
           {/* Educational History */}
-          <div className="space-y-2 pt-2">
-            <div className="font-bold text-[12px] text-black">Educational History</div>
+          <div className="mb-5 space-y-2.5">
+            <div className="font-bold text-[13.5px] text-black mb-1.5">Educational History</div>
 
             <div className="flex items-start">
-              <span className="w-48 shrink-0 font-semibold text-black">Type of school</span>
+              <span className="w-56 shrink-0 font-semibold text-black">Type of school</span>
               <span className="w-3 shrink-0 text-center">:</span>
               <span className="flex-1 text-black break-words">{data.educationalHistory.typeOfSchool || ''}</span>
             </div>
 
             <div className="flex items-start">
-              <span className="w-48 shrink-0 font-semibold text-black">Age at which admitted</span>
+              <span className="w-56 shrink-0 font-semibold text-black">Age at which admitted</span>
               <span className="w-3 shrink-0 text-center">:</span>
               <span className="flex-1 text-black break-words">{data.educationalHistory.ageAtWhichAdmitted || ''}</span>
             </div>
 
             <div className="flex items-start">
-              <span className="w-48 shrink-0 font-semibold text-black">Complaints</span>
+              <span className="w-56 shrink-0 font-semibold text-black">Complaints</span>
               <span className="w-3 shrink-0 text-center">:</span>
-              <span className="flex-1 text-black break-words leading-relaxed">{data.educationalHistory.complaints || ''}</span>
+              <div className="flex-1 min-h-[75px]">
+                <p className="text-black break-words leading-relaxed">{data.educationalHistory.complaints || ''}</p>
+              </div>
             </div>
 
             <div className="flex items-start">
-              <span className="w-48 shrink-0 font-semibold text-black">Performance</span>
+              <span className="w-56 shrink-0 font-semibold text-black">Performance</span>
               <span className="w-3 shrink-0 text-center">:</span>
-              <span className="flex-1 text-black break-words leading-relaxed">{data.educationalHistory.performance || ''}</span>
+              <div className="flex-1 min-h-[75px]">
+                <p className="text-black break-words leading-relaxed">{data.educationalHistory.performance || ''}</p>
+              </div>
             </div>
           </div>
 
-          {/* On Observation - Anchored near bottom */}
-          <div className="space-y-2 pt-2 pb-1">
-            <div className="font-bold text-[12px] text-black">On Observation</div>
+          {/* On Observation */}
+          <div className="space-y-3">
+            <div className="font-bold text-[13.5px] text-black mb-1.5">On Observation</div>
 
             <div className="flex items-center">
-              <span className="w-48 shrink-0 font-semibold text-black">General appearance</span>
+              <span className="w-56 shrink-0 font-semibold text-black">General appearance</span>
               <span className="w-3 shrink-0 text-center">:</span>
               <div className="flex-1 flex items-center gap-3">
                 <ReportCheckbox checked={data.onObservation.generalAppearance === 'Well built'} label="Well built" />
@@ -250,16 +260,18 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
             </div>
 
             <div className="flex items-start">
-              <div className="w-48 shrink-0 leading-tight">
+              <div className="w-56 shrink-0 leading-tight">
                 <div className="font-semibold text-black">Stereotypical behaviors</div>
-                <div className="text-[10px] text-slate-700">(If any)</div>
+                <div className="text-[11px] text-slate-700">(If any)</div>
               </div>
               <span className="w-3 shrink-0 text-center">:</span>
-              <span className="flex-1 text-black leading-relaxed break-words">{data.onObservation.stereotypicalBehaviors || ''}</span>
+              <div className="flex-1 min-h-[75px]">
+                <p className="text-black leading-relaxed break-words">{data.onObservation.stereotypicalBehaviors || ''}</p>
+              </div>
             </div>
 
             <div className="flex items-center">
-              <span className="w-48 shrink-0 font-semibold text-black">Eye contact</span>
+              <span className="w-56 shrink-0 font-semibold text-black">Eye contact</span>
               <span className="w-3 shrink-0 text-center">:</span>
               <div className="flex-1 flex items-center gap-3">
                 <ReportCheckbox checked={data.onObservation.eyeContact === 'Maintain well'} label="Maintain well" />
@@ -275,36 +287,36 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
           PAGE 3: ON EXAMINATION - GROSS MOTOR & FINE MOTOR SKILLS
          ======================================================== */}
       <section className="a4-page a4-page-screen page-break bg-white text-black print:shadow-none print:border-none">
-        <div className="assessment-border flex flex-col justify-between text-[11.5px]">
-          {/* Top Half: Gross Motor Skills Table */}
+        <div className="assessment-border text-[12px]">
+          {/* Gross Motor Skills Table */}
           <div>
-            <div className="font-bold text-[12px] text-black mb-1.5">On Examination :</div>
+            <div className="font-bold text-[13.5px] text-black mb-2">On Examination :</div>
 
-            <table className="w-full border-collapse border border-black table-fixed text-[11px]">
+            <table className="w-full border-collapse border border-black table-fixed text-[11.5px]">
               <thead>
                 <tr className="border-b border-black bg-slate-50">
-                  <th className="border-r border-black p-1.5 text-left font-bold w-[32%]">Gross motor skills</th>
-                  <th className="border-r border-black p-1.5 text-center font-bold w-[18%]">Age appropriate</th>
-                  <th className="border-r border-black p-1.5 text-center font-bold w-[18%]">Inappropriate</th>
-                  <th className="p-1.5 text-left font-bold w-[32%]">Specify, if inappropriate</th>
+                  <th className="border-r border-black py-2 px-2 text-left font-bold w-[32%]">Gross motor skills</th>
+                  <th className="border-r border-black py-2 px-1 text-center font-bold w-[18%]">Age appropriate</th>
+                  <th className="border-r border-black py-2 px-1 text-center font-bold w-[18%]">Inappropriate</th>
+                  <th className="py-2 px-2 text-left font-bold w-[32%]">Specify, if inappropriate</th>
                 </tr>
               </thead>
               <tbody>
                 {data.onExamination.grossMotorSkills.map((item) => (
                   <tr key={item.id} className="border-b border-black">
-                    <td className="border-r border-black p-1.5 pl-2 break-words">
+                    <td className="border-r border-black py-1.5 px-2 break-words">
                       {item.name}
                       {item.sublabel && (
-                        <span className="block pl-3 text-[10px] text-slate-800">{item.sublabel}</span>
+                        <span className="block pl-3 text-[10.5px] text-slate-800">{item.sublabel}</span>
                       )}
                     </td>
-                    <td className="border-r border-black p-1.5 text-center font-bold text-black text-[12px]">
+                    <td className="border-r border-black py-1.5 px-1 text-center font-bold text-black text-[12px]">
                       {item.rating === 'Age appropriate' ? '✓' : ''}
                     </td>
-                    <td className="border-r border-black p-1.5 text-center font-bold text-black text-[12px]">
+                    <td className="border-r border-black py-1.5 px-1 text-center font-bold text-black text-[12px]">
                       {item.rating === 'Inappropriate' ? '✓' : ''}
                     </td>
-                    <td className="p-1.5 pl-2 text-black text-[11px] break-words">
+                    <td className="py-1.5 px-2 text-black text-[11px] break-words">
                       {item.specify || ''}
                     </td>
                   </tr>
@@ -313,14 +325,14 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
             </table>
           </div>
 
-          {/* Bottom Half: Fine Motor Skills */}
-          <div className="space-y-2 pt-2">
-            <div className="font-bold text-[12px] text-black">Fine Motor Skills :</div>
+          {/* Fine Motor Skills */}
+          <div className="mt-5 space-y-2.5">
+            <div className="font-bold text-[13.5px] text-black mb-1.5">Fine Motor Skills :</div>
 
             <div className="flex items-center py-1">
-              <span className="w-56 shrink-0 font-semibold text-black">Hand dominance</span>
+              <span className="w-60 shrink-0 font-semibold text-black">Hand dominance</span>
               <span className="w-3 shrink-0 text-center">:</span>
-              <div className="flex-1 flex items-center gap-4">
+              <div className="flex-1 flex items-center gap-5">
                 <ReportCheckbox checked={data.onExamination.fineMotorSkills.handDominance === 'Right'} label="Right" />
                 <ReportCheckbox checked={data.onExamination.fineMotorSkills.handDominance === 'Left'} label="Left" />
                 <ReportCheckbox checked={data.onExamination.fineMotorSkills.handDominance === 'Mixed'} label="Mixed" />
@@ -338,8 +350,8 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
               { label: 'Threading beads', value: data.onExamination.fineMotorSkills.threadingBeads },
               { label: 'Paper folding', value: data.onExamination.fineMotorSkills.paperFolding },
             ].map((field) => (
-              <div key={field.label} className="flex items-start leading-normal py-1">
-                <span className="w-56 shrink-0 font-normal text-black">{field.label}</span>
+              <div key={field.label} className="flex items-start leading-snug py-1.5 border-b border-slate-50 last:border-none">
+                <span className="w-60 shrink-0 font-normal text-black">{field.label}</span>
                 <span className="w-3 shrink-0 text-center">:</span>
                 <span className="flex-1 text-black font-medium break-words">{field.value || ''}</span>
               </div>
@@ -352,31 +364,31 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
           PAGE 4: HANDWRITING & COGNITIVE PERCEPTUAL SKILLS
          ======================================================== */}
       <section className="a4-page a4-page-screen page-break bg-white text-black print:shadow-none print:border-none">
-        <div className="assessment-border flex flex-col justify-between text-[11.5px]">
-          {/* Top Block: Hand Writing Skills */}
-          <div className="space-y-2">
-            <div className="font-bold text-[12px] text-black">Hand Writing Skills</div>
+        <div className="assessment-border text-[12.5px]">
+          {/* Hand Writing Skills */}
+          <div className="space-y-2 mb-5">
+            <div className="font-bold text-[13.5px] text-black">Hand Writing Skills</div>
 
             <div className="font-bold text-black pl-1">Pre-writing</div>
             <div className="flex items-start pl-2 py-1">
-              <span className="w-40 shrink-0 font-normal text-black">Scribbling</span>
+              <span className="w-44 shrink-0 font-normal text-black">Scribbling</span>
               <span className="w-3 shrink-0 text-center">:</span>
               <span className="flex-1 text-black break-words">{data.handWritingSkills.preWriting.scribbling || ''}</span>
             </div>
             <div className="flex items-start pl-2 py-1">
-              <span className="w-40 shrink-0 font-normal text-black">Basic figures</span>
+              <span className="w-44 shrink-0 font-normal text-black">Basic figures</span>
               <span className="w-3 shrink-0 text-center">:</span>
               <span className="flex-1 text-black break-words">{data.handWritingSkills.preWriting.basicFigures || ''}</span>
             </div>
             <div className="flex items-start pl-2 py-1">
-              <span className="w-40 shrink-0 font-normal text-black">Coloring</span>
+              <span className="w-44 shrink-0 font-normal text-black">Coloring</span>
               <span className="w-3 shrink-0 text-center">:</span>
               <span className="flex-1 text-black break-words">{data.handWritingSkills.preWriting.coloring || ''}</span>
             </div>
             <div className="flex items-center pl-2 py-1">
-              <span className="w-40 shrink-0 font-normal text-black">Pencil grasp</span>
+              <span className="w-44 shrink-0 font-normal text-black">Pencil grasp</span>
               <span className="w-3 shrink-0 text-center">:</span>
-              <div className="flex-1 flex flex-wrap items-center gap-3">
+              <div className="flex-1 flex flex-wrap items-center gap-2">
                 <ReportCheckbox checked={data.handWritingSkills.preWriting.pencilGrasp === 'Static tripod'} label="Static tripod" />
                 <ReportCheckbox checked={data.handWritingSkills.preWriting.pencilGrasp === 'Dynamic tripod'} label="Dynamic tripod" />
                 <ReportCheckbox checked={data.handWritingSkills.preWriting.pencilGrasp === 'Digital pronate'} label="Digital pronate" />
@@ -384,23 +396,23 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
               </div>
             </div>
 
-            <div className="font-bold text-black pl-1 pt-1">Writing</div>
+            <div className="font-bold text-black pl-1 pt-1.5">Writing</div>
             <div className="flex items-start pl-2 py-1">
-              <span className="w-40 shrink-0 font-normal text-black">Alphabets</span>
+              <span className="w-44 shrink-0 font-normal text-black">Alphabets</span>
               <span className="w-3 shrink-0 text-center">:</span>
               <span className="flex-1 text-black break-words">{data.handWritingSkills.writing.alphabets || ''}</span>
             </div>
             <div className="flex items-start pl-2 py-1">
-              <span className="w-40 shrink-0 font-normal text-black">Numbers</span>
+              <span className="w-44 shrink-0 font-normal text-black">Numbers</span>
               <span className="w-3 shrink-0 text-center">:</span>
               <span className="flex-1 text-black break-words">{data.handWritingSkills.writing.numbers || ''}</span>
             </div>
           </div>
 
-          {/* Middle Block: Attention & Memory (6 items) */}
-          <div className="space-y-1.5 pt-2">
-            <div className="font-bold text-[12px] text-black">Cognitive Perceptual Skills :</div>
-            <div className="font-bold text-black pl-1">Attention &amp; Memory :</div>
+          {/* Attention & Memory */}
+          <div className="mb-5 space-y-1">
+            <div className="font-bold text-[13.5px] text-black">Cognitive Perceptual Skills :</div>
+            <div className="font-bold text-black pl-1 mb-1.5">Attention &amp; Memory :</div>
 
             {[
               { key: 'anticipatesRhymesOrSongs', label: 'Anticipates parts of rhymes or songs' },
@@ -410,16 +422,16 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
               { key: 'remembersHiddenObjects', label: 'Remembers and names which is of 3 objects has been hidden' },
               { key: 'recallsPastEventStory', label: 'Recalls event in the past / story' },
             ].map((item) => (
-              <div key={item.key} className="flex justify-between items-center pl-2 pr-1 py-1">
-                <span className="text-black text-[11.5px] max-w-[85%] break-words">{item.label}</span>
+              <div key={item.key} className="flex justify-between items-center pl-2 pr-1 py-2 border-b border-slate-100 last:border-none">
+                <span className="text-black text-[12.5px] max-w-[85%] break-words">{item.label}</span>
                 <ReportCheckbox checked={data.cognitivePerceptualSkills.attentionAndMemory[item.key as keyof typeof data.cognitivePerceptualSkills.attentionAndMemory]} />
               </div>
             ))}
           </div>
 
-          {/* Bottom Block: Concepts (General) (7 items) */}
-          <div className="space-y-1.5 pt-2 pb-1">
-            <div className="font-bold text-black pl-1">Concepts : (General)</div>
+          {/* Concepts (General) */}
+          <div className="space-y-1">
+            <div className="font-bold text-black pl-1 mb-1.5">Concepts : (General)</div>
 
             {[
               { key: 'sortsObjectsByColourFormName', label: 'Sorts objects by colour, form, name' },
@@ -430,8 +442,8 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
               { key: 'namesExamplesWithinCategory', label: 'Names examples within a category (Animals, objects in kitchen, clothes)' },
               { key: 'identifiesBodyParts', label: 'Identifies 3 - 6 body parts' },
             ].map((item) => (
-              <div key={item.key} className="flex justify-between items-center pl-2 pr-1 py-1">
-                <span className="text-black text-[11.5px] max-w-[85%] break-words">{item.label}</span>
+              <div key={item.key} className="flex justify-between items-center pl-2 pr-1 py-2 border-b border-slate-100 last:border-none">
+                <span className="text-black text-[12.5px] max-w-[85%] break-words">{item.label}</span>
                 <ReportCheckbox checked={data.cognitivePerceptualSkills.conceptsGeneral[item.key as keyof typeof data.cognitivePerceptualSkills.conceptsGeneral]} />
               </div>
             ))}
@@ -443,10 +455,10 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
           PAGE 5: SIZE & NUMBERS, VISUAL PERCEPTION, SOCIAL EMOTIONAL
          ======================================================== */}
       <section className="a4-page a4-page-screen page-break bg-white text-black print:shadow-none print:border-none">
-        <div className="assessment-border flex flex-col justify-between text-[11.5px]">
-          {/* Section 1: Size and numbers (8 items) */}
-          <div className="space-y-1">
-            <div className="font-bold text-[12px] text-black mb-1">Size and numbers</div>
+        <div className="assessment-border text-[12.5px]">
+          {/* Size and numbers */}
+          <div className="space-y-1 mb-5">
+            <div className="font-bold text-[13.5px] text-black mb-2">Size and numbers</div>
 
             {[
               { key: 'understandBigSmall', label: 'Understand big / small' },
@@ -458,16 +470,16 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
               { key: 'tellsCorrectAge', label: 'Tells correct age' },
               { key: 'answerAddition2to10', label: 'Answer addition question involving +2 to 10' },
             ].map((item) => (
-              <div key={item.key} className="flex justify-between items-center pl-1 pr-1 py-1">
-                <span className="text-black text-[11.5px] break-words">{item.label}</span>
+              <div key={item.key} className="flex justify-between items-center pl-1 pr-1 py-2 border-b border-slate-100 last:border-none">
+                <span className="text-black text-[12.5px] break-words">{item.label}</span>
                 <ReportCheckbox checked={data.sizeAndNumbers[item.key as keyof typeof data.sizeAndNumbers]} />
               </div>
             ))}
           </div>
 
-          {/* Section 2: Visual perception; [block design and puzzles] (6 items) */}
-          <div className="space-y-1 pt-2">
-            <div className="font-bold text-[12px] text-black mb-1">Visual perception; [block design and puzzles]</div>
+          {/* Visual perception; [block design and puzzles] */}
+          <div className="space-y-1 mb-5">
+            <div className="font-bold text-[13.5px] text-black mb-2">Visual perception; [block design and puzzles]</div>
 
             {[
               { key: 'imitatesBlockTrainPatterns', label: 'Imitates block train and block patterns' },
@@ -477,16 +489,16 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
               { key: 'completes4to5PiecePuzzles', label: 'Completes 4 to 5 piece puzzles' },
               { key: 'matchesLetterNumbersOnBoard', label: 'Matches letter and numbers on board' },
             ].map((item) => (
-              <div key={item.key} className="flex justify-between items-center pl-1 pr-1 py-1">
-                <span className="text-black text-[11.5px] break-words">{item.label}</span>
+              <div key={item.key} className="flex justify-between items-center pl-1 pr-1 py-2 border-b border-slate-100 last:border-none">
+                <span className="text-black text-[12.5px] break-words">{item.label}</span>
                 <ReportCheckbox checked={data.visualPerception[item.key as keyof typeof data.visualPerception]} />
               </div>
             ))}
           </div>
 
-          {/* Section 3: Social emotional skills (8 items) */}
-          <div className="space-y-1 pt-2 pb-1">
-            <div className="font-bold text-[12px] text-black mb-1">Social emotional skills</div>
+          {/* Social emotional skills */}
+          <div className="space-y-1">
+            <div className="font-bold text-[13.5px] text-black mb-2">Social emotional skills</div>
 
             {[
               { key: 'eyeContactSees', label: 'Eye contact ................... [Sees]' },
@@ -498,8 +510,8 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
               { key: 'imitatesAdults', label: 'Imitates adults [picking up, dusting]' },
               { key: 'respondsScoldedPatted', label: 'Responds appropriately when scolded / patted' },
             ].map((item) => (
-              <div key={item.key} className="flex justify-between items-center pl-1 pr-1 py-1">
-                <span className="text-black text-[11.5px] break-words">{item.label}</span>
+              <div key={item.key} className="flex justify-between items-center pl-1 pr-1 py-2 border-b border-slate-100 last:border-none">
+                <span className="text-black text-[12.5px] break-words">{item.label}</span>
                 <ReportCheckbox checked={data.socialEmotionalSkills[item.key as keyof typeof data.socialEmotionalSkills]} />
               </div>
             ))}
@@ -511,9 +523,9 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
           PAGE 6: SOCIAL EMOTIONAL (CONT), COMMUNICATION, SELF CARE
          ======================================================== */}
       <section className="a4-page a4-page-screen page-break bg-white text-black print:shadow-none print:border-none">
-        <div className="assessment-border flex flex-col justify-between text-[11.5px]">
-          {/* Top: Social emotional skills continuation (6 items) */}
-          <div className="space-y-1">
+        <div className="assessment-border text-[12.5px]">
+          {/* Social emotional skills continuation */}
+          <div className="space-y-1 mb-5">
             {[
               { key: 'respondsInSocialSituations', label: 'Responds appropriately in social situations' },
               { key: 'separatesFromParents', label: 'Separates from parents in familiar surroundings' },
@@ -522,16 +534,16 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
               { key: 'sharesThingsAndBelonging', label: 'Shares things and belonging' },
               { key: 'takesTurnsWaits', label: 'Takes turns and waits for his / her turn' },
             ].map((item) => (
-              <div key={item.key} className="flex justify-between items-center pl-1 pr-1 py-1">
-                <span className="text-black text-[11.5px] break-words">{item.label}</span>
+              <div key={item.key} className="flex justify-between items-center pl-1 pr-1 py-2 border-b border-slate-100 last:border-none">
+                <span className="text-black text-[12.5px] break-words">{item.label}</span>
                 <ReportCheckbox checked={data.socialEmotionalSkills[item.key as keyof typeof data.socialEmotionalSkills]} />
               </div>
             ))}
           </div>
 
-          {/* Middle: Communication and languages skills (8 items) */}
-          <div className="space-y-2 pt-2">
-            <div className="font-bold text-[12px] text-black">Communication and languages skills :</div>
+          {/* Communication and languages skills */}
+          <div className="space-y-2 mb-5">
+            <div className="font-bold text-[13.5px] text-black">Communication and languages skills :</div>
 
             <div className="font-bold text-black pl-1">Expressive :</div>
             {[
@@ -540,29 +552,29 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
               { key: 'usesMonoBiSyllablesSentences', label: 'Uses mono syllables, bisyllables 2 or 3 word sentences' },
               { key: 'gesturesPoints', label: 'Gestures, points' },
             ].map((item) => (
-              <div key={item.key} className="flex justify-between items-center pl-2 pr-1 py-1">
-                <span className="text-black text-[11.5px] break-words">{item.label}</span>
+              <div key={item.key} className="flex justify-between items-center pl-2 pr-1 py-2 border-b border-slate-100 last:border-none">
+                <span className="text-black text-[12.5px] break-words">{item.label}</span>
                 <ReportCheckbox checked={data.communicationAndLanguagesSkills.expressive[item.key as keyof typeof data.communicationAndLanguagesSkills.expressive]} />
               </div>
             ))}
 
-            <div className="font-bold text-black pl-1 pt-1">Receptive</div>
+            <div className="font-bold text-black pl-1 pt-1.5">Receptive</div>
             {[
               { key: 'understandsSingleOr2StepCommands', label: 'Understands single or 2 step commands' },
               { key: 'understandGestures', label: 'Understand gestures' },
               { key: 'respondsToYesNo', label: 'Responds to yes / no' },
               { key: 'respondsToWhoWhereQuestions', label: 'Responds to who, where questions' },
             ].map((item) => (
-              <div key={item.key} className="flex justify-between items-center pl-2 pr-1 py-1">
-                <span className="text-black text-[11.5px] break-words">{item.label}</span>
+              <div key={item.key} className="flex justify-between items-center pl-2 pr-1 py-2 border-b border-slate-100 last:border-none">
+                <span className="text-black text-[12.5px] break-words">{item.label}</span>
                 <ReportCheckbox checked={data.communicationAndLanguagesSkills.receptive[item.key as keyof typeof data.communicationAndLanguagesSkills.receptive]} />
               </div>
             ))}
           </div>
 
-          {/* Bottom: Self Care (6 items) */}
-          <div className="space-y-2 pt-2 pb-1">
-            <div className="font-bold text-[12px] text-black mb-1">Self Care</div>
+          {/* Self Care */}
+          <div className="space-y-2">
+            <div className="font-bold text-[13.5px] text-black mb-2">Self Care</div>
 
             {[
               { label: 'Toileting', value: data.selfCare.toileting },
@@ -572,8 +584,8 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
               { label: 'Bathing', value: data.selfCare.bathing },
               { label: 'Putting on shoes / sandals', value: data.selfCare.puttingOnShoesSandals },
             ].map((field) => (
-              <div key={field.label} className="flex items-start leading-normal py-1">
-                <span className="w-56 shrink-0 font-normal text-black">{field.label}</span>
+              <div key={field.label} className="flex items-start leading-snug py-1.5 border-b border-slate-50 last:border-none">
+                <span className="w-60 shrink-0 font-normal text-black">{field.label}</span>
                 <span className="w-3 shrink-0 text-center">:</span>
                 <span className="flex-1 text-black font-medium break-words">{field.value || ''}</span>
               </div>
@@ -586,30 +598,32 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
           PAGE 7: PLAY, SENSORY MODULATION, AUTISTIC & ADHD FEATURES
          ======================================================== */}
       <section className="a4-page a4-page-screen page-break bg-white text-black print:shadow-none print:border-none">
-        <div className="assessment-border flex flex-col justify-between text-[11.5px]">
+        <div className="assessment-border text-[12.5px]">
           {/* Play */}
-          <div className="space-y-1">
-            <div className="font-bold text-[12px] text-black">Play :</div>
-            <p className="text-black leading-relaxed text-justify min-h-[50px] break-words">
-              {data.play || ''}
-            </p>
+          <div className="mb-5">
+            <div className="font-bold text-[13.5px] text-black mb-1.5">Play :</div>
+            <div className="min-h-[100px]">
+              <p className="text-black leading-relaxed text-justify break-words">
+                {data.play || ''}
+              </p>
+            </div>
           </div>
 
           {/* Sensory Modulation Table */}
-          <div className="pt-1">
-            <table className="w-full border-collapse border border-black table-fixed text-[11px]">
+          <div className="mb-5">
+            <table className="w-full border-collapse border border-black table-fixed text-[11.5px]">
               <thead>
                 <tr className="border-b border-black bg-slate-50">
-                  <th className="border-r border-black p-1.5 text-left font-bold w-[34%]">Sensory modulation</th>
-                  <th className="border-r border-black p-1.5 text-center font-bold w-[22%]">Hyper sensitivity</th>
-                  <th className="border-r border-black p-1.5 text-center font-bold w-[22%]">Hyposensitivity</th>
-                  <th className="p-1.5 text-center font-bold w-[22%]">Both</th>
+                  <th className="border-r border-black py-2 px-2 text-left font-bold w-[34%]">Sensory modulation</th>
+                  <th className="border-r border-black py-2 px-1 text-center font-bold w-[22%]">Hyper sensitivity</th>
+                  <th className="border-r border-black py-2 px-1 text-center font-bold w-[22%]">Hyposensitivity</th>
+                  <th className="py-2 px-1 text-center font-bold w-[22%]">Both</th>
                 </tr>
               </thead>
               <tbody>
                 {data.sensoryModulation.map((item) => (
                   <tr key={item.id} className="border-b border-black">
-                    <td className="border-r border-black p-1.5 pl-2 break-words">
+                    <td className="border-r border-black py-2 px-2 break-words">
                       {item.subname ? (
                         <div className="flex justify-between pr-2">
                           <span>{item.id === 'oral_peri' ? item.name : ''}</span>
@@ -619,13 +633,13 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
                         item.name
                       )}
                     </td>
-                    <td className="border-r border-black p-1.5 text-center font-bold text-black text-[12px]">
+                    <td className="border-r border-black py-2 px-1 text-center font-bold text-black text-[12px]">
                       {item.status === 'Hyper sensitivity' ? '✓' : ''}
                     </td>
-                    <td className="border-r border-black p-1.5 text-center font-bold text-black text-[12px]">
+                    <td className="border-r border-black py-2 px-1 text-center font-bold text-black text-[12px]">
                       {item.status === 'Hyposensitivity' ? '✓' : ''}
                     </td>
-                    <td className="p-1.5 text-center font-bold text-black text-[12px]">
+                    <td className="py-2 px-1 text-center font-bold text-black text-[12px]">
                       {item.status === 'Both' ? '✓' : ''}
                     </td>
                   </tr>
@@ -635,37 +649,45 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
           </div>
 
           {/* Autistic Features */}
-          <div className="space-y-2 pt-1">
-            <div className="font-bold text-[12px] text-black">Autistic Features :</div>
+          <div className="space-y-3.5 mb-5">
+            <div className="font-bold text-[13.5px] text-black">Autistic Features :</div>
 
-            <div className="space-y-0.5 pl-1">
+            <div className="space-y-1 pl-1">
               <div className="font-bold text-black">1. Communication</div>
-              <p className="text-black leading-relaxed text-justify min-h-[40px] break-words pl-2">
-                {data.autisticFeatures.communication || ''}
-              </p>
+              <div className="min-h-[85px]">
+                <p className="text-black leading-relaxed text-justify break-words pl-2">
+                  {data.autisticFeatures.communication || ''}
+                </p>
+              </div>
             </div>
 
-            <div className="space-y-0.5 pl-1">
+            <div className="space-y-1 pl-1">
               <div className="font-bold text-black">2. Stereotype</div>
-              <p className="text-black leading-relaxed text-justify min-h-[40px] break-words pl-2">
-                {data.autisticFeatures.stereotype || ''}
-              </p>
+              <div className="min-h-[85px]">
+                <p className="text-black leading-relaxed text-justify break-words pl-2">
+                  {data.autisticFeatures.stereotype || ''}
+                </p>
+              </div>
             </div>
 
-            <div className="space-y-0.5 pl-1">
+            <div className="space-y-1 pl-1">
               <div className="font-bold text-black">3. Socialization</div>
-              <p className="text-black leading-relaxed text-justify min-h-[40px] break-words pl-2">
-                {data.autisticFeatures.socialization || ''}
-              </p>
+              <div className="min-h-[85px]">
+                <p className="text-black leading-relaxed text-justify break-words pl-2">
+                  {data.autisticFeatures.socialization || ''}
+                </p>
+              </div>
             </div>
           </div>
 
           {/* ADHD Features */}
-          <div className="space-y-1 pt-1 pb-1">
-            <div className="font-bold text-[12px] text-black">ADHD Features :</div>
-            <p className="text-black leading-relaxed text-justify min-h-[40px] break-words pl-1">
-              {data.adhdFeatures || ''}
-            </p>
+          <div>
+            <div className="font-bold text-[13.5px] text-black mb-1.5">ADHD Features :</div>
+            <div className="min-h-[90px]">
+              <p className="text-black leading-relaxed text-justify break-words pl-1">
+                {data.adhdFeatures || ''}
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -674,55 +696,67 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
           PAGE 8: STANDARDIZATION TESTS, THERAPY PLAN & SIGNATURE
          ======================================================== */}
       <section className="a4-page a4-page-screen bg-white text-black print:shadow-none print:border-none">
-        <div className="assessment-border flex flex-col justify-between text-[11.5px]">
+        <div className="assessment-border text-[12.5px] flex flex-col justify-between">
           {/* Top standardized tests block */}
           <div className="space-y-3">
             <div>
-              <div className="font-bold text-black mb-0.5">Administration of Standardization Tests :</div>
-              <p className="text-black leading-relaxed text-justify min-h-[30px] break-words">
-                {data.standardizationTests.administrationNote || ''}
-              </p>
+              <div className="font-bold text-black mb-1">Administration of Standardization Tests :</div>
+              <div className="min-h-[50px]">
+                <p className="text-black leading-relaxed text-justify break-words">
+                  {data.standardizationTests.administrationNote || ''}
+                </p>
+              </div>
             </div>
 
             <div>
-              <div className="font-bold text-black mb-0.5">CARS :</div>
-              <p className="text-black leading-relaxed text-justify min-h-[30px] break-words">
-                {data.standardizationTests.cars || ''}
-              </p>
+              <div className="font-bold text-black mb-1">CARS :</div>
+              <div className="min-h-[50px]">
+                <p className="text-black leading-relaxed text-justify break-words">
+                  {data.standardizationTests.cars || ''}
+                </p>
+              </div>
             </div>
 
             <div>
-              <div className="font-bold text-black mb-0.5">VANDERILT'S ADHD SCALE :</div>
-              <p className="text-black leading-relaxed text-justify min-h-[30px] break-words">
-                {data.standardizationTests.vanderbiltScale || ''}
-              </p>
+              <div className="font-bold text-black mb-1">VANDERILT'S ADHD SCALE :</div>
+              <div className="min-h-[50px]">
+                <p className="text-black leading-relaxed text-justify break-words">
+                  {data.standardizationTests.vanderbiltScale || ''}
+                </p>
+              </div>
             </div>
 
             <div>
-              <div className="font-bold text-black mb-0.5">M-CHAT :</div>
-              <p className="text-black leading-relaxed text-justify min-h-[30px] break-words">
-                {data.standardizationTests.mChat || ''}
-              </p>
+              <div className="font-bold text-black mb-1">M-CHAT :</div>
+              <div className="min-h-[50px]">
+                <p className="text-black leading-relaxed text-justify break-words">
+                  {data.standardizationTests.mChat || ''}
+                </p>
+              </div>
             </div>
 
             <div>
-              <div className="font-bold text-black mb-0.5">GARS-2 :</div>
-              <p className="text-black leading-relaxed text-justify min-h-[30px] break-words">
-                {data.standardizationTests.gars2 || ''}
-              </p>
+              <div className="font-bold text-black mb-1">GARS-2 :</div>
+              <div className="min-h-[50px]">
+                <p className="text-black leading-relaxed text-justify break-words">
+                  {data.standardizationTests.gars2 || ''}
+                </p>
+              </div>
             </div>
 
             {/* Comprehensive Therapy Plan */}
             <div>
-              <div className="font-bold text-black mb-0.5">THERAPY PLAN :</div>
-              <p className="text-black leading-relaxed whitespace-pre-line text-justify min-h-[140px] break-words">
-                {data.standardizationTests.therapyPlan || ''}
-              </p>
+              <div className="font-bold text-black mb-1">THERAPY PLAN :</div>
+              <div className="min-h-[220px]">
+                <p className="text-black leading-relaxed whitespace-pre-line text-justify break-words">
+                  {data.standardizationTests.therapyPlan || ''}
+                </p>
+              </div>
             </div>
           </div>
 
           {/* Bottom Right: Consultant Name & Signature Block */}
-          <div className="mt-4 flex flex-col items-end text-right pb-1">
+          <div className="mt-4 flex flex-col items-end text-right">
             <div className="w-72 flex flex-col items-center">
               {data.consultant.signatureImage ? (
                 <img
@@ -733,17 +767,17 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
               ) : (
                 <div className="h-14" />
               )}
-              <div className="font-bold text-[13px] text-black">
+              <div className="font-bold text-[13.5px] text-black">
                 {data.consultant.name || 'Dr. S. VENKATESAN, BOT'}
               </div>
-              <div className="text-[11.5px] text-black font-bold">
+              <div className="text-[12px] text-black font-bold">
                 Peadiatric Occupational Therapist
               </div>
-              <div className="text-[10.5px] text-black font-semibold">
+              <div className="text-[11px] text-black font-semibold">
                 Founder &amp; Clinical Director
               </div>
               {data.consultant.date && (
-                <div className="text-[10.5px] text-black mt-0.5">Date: {data.consultant.date}</div>
+                <div className="text-[11px] text-black mt-0.5">Date: {data.consultant.date}</div>
               )}
             </div>
           </div>
