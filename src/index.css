@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #f8fafc;
+    color: #0f172a;
+  }
+}
+
+/* Document & Report styling strictly in Times New Roman */
+.document-font {
+  font-family: 'Times New Roman', Times, Georgia, serif !important;
+}
+
+/* ========================================================
+   CALIBRATED A4 PAGE GEOMETRY (ZERO BLANK PAGES)
+   - Height strictly set to 295.5mm (safe within 297mm A4 limit)
+   - Eliminates rounding spillage and duplicate pagebreaks
+   ======================================================== */
+.a4-page,
+.a4-page-screen {
+  width: 210mm !important;
+  max-width: 210mm !important;
+  height: 295.5mm !important;
+  max-height: 295.5mm !important;
+  padding: 8mm 10mm !important;
+  margin: 0 auto !important;
+  background: #ffffff !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  position: relative !important;
+  font-family: 'Times New Roman', Times, Georgia, serif !important;
+}
+
+/* Visible space between pages only on screen preview */
+.screen-preview-container .a4-page {
+  margin-bottom: 24px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  border: 1px solid #cbd5e1;
+}
+
+/* Page break strictly on pages 1 to 7 */
+.page-break {
+  page-break-after: always !important;
+  break-after: page !important;
+}
+
+/* Border styling inside the sheet */
+.assessment-border {
+  border: 1.5px solid #000000 !important;
+  border-radius: 12px !important;
+  padding: 10px 14px !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  overflow: hidden !important;
+}
+
+/* ========================================================
+   BULLETPROOF PRINT RULES
+   ======================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html, body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 210mm !important;
+    font-family: 'Times New Roman', Times, Georgia, serif !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide all interactive app chrome */
+  header,
+  nav,
+  button,
+  .no-print,
+  .interactive-ui-root,
+  .editor-container,
+  .toolbar-container {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Isolate Print Document Root */
+  #pure-official-document {
+    display: block !important;
+    position: static !important;
+    width: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    visibility: visible !important;
+  }
+
+  #pure-official-document * {
+    visibility: visible !important;
+  }
+
+  .screen-preview-container .a4-page {
+    margin-bottom: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .a4-page {
+    box-shadow: none !important;
+    margin: 0 auto !important;
+    padding: 8mm 10mm !important;
+    width: 210mm !important;
+    max-width: 210mm !important;
+    height: 295.5mm !important;
+    max-height: 295.5mm !important;
+    border-radius: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+}

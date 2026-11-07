@@ -1,0 +1,692 @@
+import React, { useState, useEffect, useRef } from 'react';
+import type { AssessmentData } from './types/assessment';
+import { emptyAssessment, sampleDemoAssessment } from './data/initialData';
+import { AssessmentReport } from './components/preview/AssessmentReport';
+import { DemographicsSection } from './components/form/sections/DemographicsSection';
+import { MedicalFamilySection } from './components/form/sections/MedicalFamilySection';
+import { MotorSkillsSection } from './components/form/sections/MotorSkillsSection';
+import { HandwritingCognitiveSection } from './components/form/sections/HandwritingCognitiveSection';
+import { NumbersSocialSection } from './components/form/sections/NumbersSocialSection';
+import { LanguageSelfCareSection } from './components/form/sections/LanguageSelfCareSection';
+import { SensoryAutismSection } from './components/form/sections/SensoryAutismSection';
+import { StandardTestsPlanSection } from './components/form/sections/StandardTestsPlanSection';
+import { CloudAssessmentsModal } from './components/common/CloudAssessmentsModal';
+import html2pdf from 'html2pdf.js';
+import {
+  Printer,
+  FileDown,
+  Eye,
+  Edit,
+  Columns,
+  Download,
+  Upload,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Save,
+  Menu,
+  X,
+  Loader2,
+  Cloud
+} from 'lucide-react';
+
+const SECTIONS = [
+  { id: 1, name: 'Demographics & Birth', page: 'Page 1', short: 'Demographics' },
+  { id: 2, name: 'Medical & Family History', page: 'Page 2', short: 'Medical/Family' },
+  { id: 3, name: 'Motor Skills (Gross/Fine)', page: 'Page 3', short: 'Motor Skills' },
+  { id: 4, name: 'Handwriting & Cognitive', page: 'Page 4', short: 'Handwriting' },
+  { id: 5, name: 'Numbers & Social Skills', page: 'Page 5', short: 'Numbers/Social' },
+  { id: 6, name: 'Language & Self Care (ADL)', page: 'Page 6', short: 'Language/ADL' },
+  { id: 7, name: 'Sensory & Autism Features', page: 'Page 7', short: 'Sensory/Autism' },
+  { id: 8, name: 'Standard Tests & Plan', page: 'Page 8', short: 'Tests & Plan' },
+];
+
+export function App() {
+  const [data, setData] = useState<AssessmentData>(() => {
+    try {
+      const saved = localStorage.getItem('thulir_assessment_current');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Error reading from localStorage', e);
+    }
+    return sampleDemoAssessment;
+  });
+
+  const [activeStep, setActiveStep] = useState(1);
+  const [viewMode, setViewMode] = useState<'editor' | 'preview' | 'split'>('editor');
+  const [zoomScale, setZoomScale] = useState(1);
+  const [lastSavedTime, setLastSavedTime] = useState<string>('Just now');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
+  const [activeDocId, setActiveDocId] = useState<string | null>(null);
+  const fileImportRef = useRef<HTMLInputElement>(null);
+
+  // Auto-save to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('thulir_assessment_current', JSON.stringify(data));
+      const now = new Date();
+      setLastSavedTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    } catch (e) {
+      console.error('Error saving to localStorage', e);
+    }
+  }, [data]);
+
+  const updateData = (updates: Partial<AssessmentData>) => {
+    setData((prev) => ({ ...prev, ...updates }));
+  };
+
+  // Direct PDF File Download using html2pdf (no browser print dialog needed)
+  const handleDownloadDirectPdf = async () => {
+    const element = document.getElementById('pure-official-document');
+    if (!element) return;
+
+    try {
+      setIsGeneratingPdf(true);
+      const studentNameClean = (data.name || 'Student').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = `Thulir_Assessment_${studentNameClean}_${data.doe || 'Report'}.pdf`;
+
+      const opt = {
+        margin: 0,
+        filename: filename,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          scrollY: 0,
+          scrollX: 0,
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait' as const,
+          compress: true,
+        },
+        pagebreak: {
+          mode: ['css'],
+        },
+      };
+
+      await html2pdf().set(opt).from(element).save();
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Could not download PDF automatically. You can use the Print button to Save as PDF.');
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleExportJson = () => {
+    const filename = `Thulir_Assessment_${(data.name || 'Student').replace(/\s+/g, '_')}_${data.doe || 'Report'}.json`;
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const parsed = JSON.parse(event.target?.result as string);
+          if (parsed && typeof parsed === 'object') {
+            setData(parsed);
+            alert('Assessment loaded successfully!');
+          }
+        } catch (err) {
+          alert('Invalid JSON file format.');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const handleResetForm = () => {
+    if (confirm('Start a new blank assessment? Any unsaved changes will be cleared.')) {
+      setData(emptyAssessment);
+      setActiveStep(1);
+      setActiveDocId(null);
+    }
+  };
+
+  const handleLoadDemo = () => {
+    setData(sampleDemoAssessment);
+    setActiveStep(1);
+    setActiveDocId(null);
+  };
+
+  const calculateCompletion = () => {
+    let score = 0;
+    if (data.name) score += 15;
+    if (data.studentPhoto) score += 10;
+    if (data.chiefComplaints) score += 15;
+    if (data.presentMedicalHistory) score += 10;
+    if (data.onExamination.fineMotorSkills.handDominance) score += 10;
+    if (data.play) score += 10;
+    if (data.standardizationTests.therapyPlan) score += 20;
+    if (data.consultant.signatureImage) score += 10;
+    return Math.min(score, 100);
+  };
+
+  const completionPct = calculateCompletion();
+
+  return (
+    <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
+      {/* ========================================================
+          TOP NAVIGATION BAR (NO GLASSMORPHISM, SOLID BUTTONS)
+         ======================================================== */}
+      <header className="sticky top-0 z-40 bg-white border-b-2 border-slate-300 no-print">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-18 py-2 flex items-center justify-between gap-4">
+          {/* Logo & Clinic Title */}
+          <div className="flex items-center gap-3">
+            <img
+              src="/logo.png"
+              alt="Thulir Special School Logo"
+              className="h-12 w-auto object-contain shrink-0"
+            />
+            <div className="border-l-2 border-slate-300 pl-3">
+              <h1 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
+                THULIR SPECIAL SCHOOL &amp; THERAPY CENTRE
+              </h1>
+              <p className="text-xs font-semibold text-teal-800">
+                Child Psychiatry Assessment &bull; Occupational Therapy &bull; Ganapathy, Coimbatore - 641 006
+              </p>
+            </div>
+          </div>
+
+          {/* Center: View Switcher (Desktop) */}
+          <div className="hidden lg:flex items-center bg-slate-100 p-1 rounded border border-slate-300">
+            <button
+              onClick={() => setViewMode('editor')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-none ${
+                viewMode === 'editor'
+                  ? 'bg-teal-700 text-white'
+                  : 'text-slate-800 hover:bg-slate-200'
+              }`}
+            >
+              <Edit className="w-3.5 h-3.5" />
+              Assessment Form
+            </button>
+            <button
+              onClick={() => setViewMode('preview')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-none ${
+                viewMode === 'preview'
+                  ? 'bg-teal-700 text-white'
+                  : 'text-slate-800 hover:bg-slate-200'
+              }`}
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Report View (PDF)
+            </button>
+            <button
+              onClick={() => setViewMode('split')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition-none ${
+                viewMode === 'split'
+                  ? 'bg-teal-700 text-white'
+                  : 'text-slate-800 hover:bg-slate-200'
+              }`}
+            >
+              <Columns className="w-3.5 h-3.5" />
+              Split Screen
+            </button>
+          </div>
+
+          {/* Action Buttons: Direct PDF Download & Print */}
+          <div className="flex items-center gap-2">
+            {/* Direct PDF File Download Button */}
+            <button
+              onClick={handleDownloadDirectPdf}
+              disabled={isGeneratingPdf}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-800 hover:bg-emerald-900 disabled:bg-emerald-600 text-white rounded text-xs sm:text-sm font-bold border border-emerald-900 transition-none shadow-sm"
+              title="Download clean official PDF directly to device"
+            >
+              {isGeneratingPdf ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Generating PDF...</span>
+                </>
+              ) : (
+                <>
+                  <FileDown className="w-4 h-4" />
+                  <span>Download PDF</span>
+                </>
+              )}
+            </button>
+
+            {/* Print to Paper / Browser Print */}
+            <button
+              onClick={handlePrint}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-teal-800 hover:bg-teal-900 text-white rounded text-xs sm:text-sm font-bold border border-teal-900 transition-none"
+              title="Print document to printer"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print</span>
+            </button>
+
+            {/* Mobile View Toggle */}
+            <div className="flex lg:hidden items-center bg-slate-100 p-1 rounded border border-slate-300">
+              <button
+                onClick={() => setViewMode('editor')}
+                className={`p-1.5 rounded font-bold ${viewMode === 'editor' ? 'bg-teal-700 text-white' : 'text-slate-800'}`}
+                title="Editor"
+              >
+                <Edit className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('preview')}
+                className={`p-1.5 rounded font-bold ${viewMode === 'preview' ? 'bg-teal-700 text-white' : 'text-slate-800'}`}
+                title="PDF Preview"
+              >
+                <Eye className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-slate-800 hover:bg-slate-200 border border-slate-300 rounded lg:hidden"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+
+            {/* Desktop Quick Tools */}
+            <div className="hidden lg:flex items-center gap-1.5 border-l-2 border-slate-300 pl-2">
+              <button
+                onClick={() => setIsCloudModalOpen(true)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-teal-900 bg-teal-50 hover:bg-teal-100 border border-teal-300 rounded transition-none shadow-xs"
+                title="Firebase Cloud Assessments (Save / Load / Manage)"
+              >
+                <Cloud className="w-3.5 h-3.5 text-teal-700" />
+                <span>Cloud</span>
+                {activeDocId && <span className="w-2 h-2 rounded-full bg-teal-600 inline-block"></span>}
+              </button>
+              <button
+                onClick={handleLoadDemo}
+                className="px-2.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-200 border border-slate-300 rounded transition-none"
+                title="Load sample child assessment case"
+              >
+                Load Sample
+              </button>
+              <button
+                onClick={handleResetForm}
+                className="p-1.5 text-slate-700 hover:text-red-700 hover:bg-slate-200 border border-slate-300 rounded transition-none"
+                title="Reset Blank Assessment"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleExportJson}
+                className="p-1.5 text-slate-700 hover:text-slate-900 hover:bg-slate-200 border border-slate-300 rounded transition-none"
+                title="Export Assessment JSON"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+              <input
+                type="file"
+                ref={fileImportRef}
+                onChange={handleImportJson}
+                accept=".json"
+                className="hidden"
+              />
+              <button
+                onClick={() => fileImportRef.current?.click()}
+                className="p-1.5 text-slate-700 hover:text-slate-900 hover:bg-slate-200 border border-slate-300 rounded transition-none"
+                title="Import Assessment JSON"
+              >
+                <Upload className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Dropdown Menu */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden border-t-2 border-slate-300 bg-white px-4 py-3 space-y-2">
+            <div className="flex flex-wrap gap-2 pb-2 border-b border-slate-200">
+              <button
+                onClick={() => {
+                  setIsCloudModalOpen(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="px-3 py-1.5 text-xs font-bold text-teal-900 bg-teal-50 border border-teal-300 rounded inline-flex items-center gap-1.5"
+              >
+                <Cloud className="w-3.5 h-3.5 text-teal-700" />
+                Cloud Assessments (Firebase)
+              </button>
+              <button
+                onClick={() => {
+                  handleDownloadDirectPdf();
+                  setMobileMenuOpen(false);
+                }}
+                className="px-3 py-1.5 text-xs font-bold text-emerald-900 bg-emerald-100 border border-emerald-300 rounded"
+              >
+                Download PDF
+              </button>
+              <button
+                onClick={() => {
+                  handleLoadDemo();
+                  setMobileMenuOpen(false);
+                }}
+                className="px-3 py-1.5 text-xs font-bold text-teal-800 bg-teal-100 border border-teal-300 rounded"
+              >
+                Load Sample Case
+              </button>
+              <button
+                onClick={() => {
+                  handleResetForm();
+                  setMobileMenuOpen(false);
+                }}
+                className="px-3 py-1.5 text-xs font-bold text-red-800 bg-red-100 border border-red-300 rounded"
+              >
+                Clear / New Blank
+              </button>
+              <button
+                onClick={() => {
+                  handleExportJson();
+                  setMobileMenuOpen(false);
+                }}
+                className="px-3 py-1.5 text-xs font-bold text-slate-800 bg-slate-200 border border-slate-300 rounded"
+              >
+                Export JSON
+              </button>
+            </div>
+            <div className="text-xs text-slate-700 flex items-center justify-between font-medium">
+              <span>Auto-saved to device</span>
+              <span className="font-bold text-slate-900">{lastSavedTime}</span>
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* ========================================================
+          SUB-HEADER: STATUS & COMPLETION BAR (HIGH VISIBILITY)
+         ======================================================== */}
+      <div className="bg-slate-200 border-b border-slate-300 px-4 sm:px-6 py-2 no-print">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          {/* Active Child Summary */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-bold text-slate-800">Active Student:</span>
+            <span className="font-bold text-teal-900 bg-white px-2 py-0.5 rounded border border-slate-300">
+              {data.name || 'Untitled Assessment'}
+            </span>
+            {data.ageSex && (
+              <span className="text-slate-800 font-medium">({data.ageSex})</span>
+            )}
+            <span className="text-slate-400">&bull;</span>
+            <span className="text-slate-700 font-medium">Eval Date: {data.doe || 'Pending'}</span>
+          </div>
+
+          {/* Progress Indicator */}
+          <div className="flex items-center gap-3">
+            <div className="text-xs text-slate-700 flex items-center gap-1 font-medium">
+              <Save className="w-3.5 h-3.5 text-emerald-700" />
+              <span>Saved locally ({lastSavedTime})</span>
+            </div>
+
+            <div className="w-28 sm:w-36 bg-slate-300 rounded h-2.5 overflow-hidden border border-slate-400">
+              <div
+                className="bg-teal-700 h-full transition-all"
+                style={{ width: `${completionPct}%` }}
+              />
+            </div>
+            <span className="text-xs font-bold text-slate-900">{completionPct}%</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================
+          MAIN INTERACTIVE UI (STRICTLY HIDDEN ON PRINT)
+         ======================================================== */}
+      <main className="interactive-ui-root no-print flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
+        {/* VIEW 1: FORM EDITOR */}
+        {(viewMode === 'editor' || viewMode === 'split') && (
+          <div className={`grid grid-cols-1 ${viewMode === 'split' ? 'lg:grid-cols-12 gap-8' : ''}`}>
+            <div className={viewMode === 'split' ? 'lg:col-span-6' : 'max-w-4xl mx-auto w-full'}>
+              {/* Stepper Tabs */}
+              <div className="bg-white rounded border-2 border-slate-300 p-2 mb-6 overflow-x-auto">
+                <div className="flex items-center gap-1 min-w-max">
+                  {SECTIONS.map((sec) => {
+                    const isActive = activeStep === sec.id;
+                    return (
+                      <button
+                        key={sec.id}
+                        onClick={() => setActiveStep(sec.id)}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded text-xs font-bold border transition-none ${
+                          isActive
+                            ? 'bg-teal-700 text-white border-teal-800'
+                            : 'bg-slate-50 text-slate-800 border-slate-300 hover:bg-slate-200'
+                        }`}
+                      >
+                        <span
+                          className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold ${
+                            isActive ? 'bg-white text-teal-900' : 'bg-slate-200 text-slate-900'
+                          }`}
+                        >
+                          {sec.id}
+                        </span>
+                        <span>{sec.short}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Form Content Card */}
+              <div className="bg-white rounded border-2 border-slate-300 p-5 sm:p-8">
+                {activeStep === 1 && <DemographicsSection data={data} onChange={updateData} />}
+                {activeStep === 2 && <MedicalFamilySection data={data} onChange={updateData} />}
+                {activeStep === 3 && <MotorSkillsSection data={data} onChange={updateData} />}
+                {activeStep === 4 && <HandwritingCognitiveSection data={data} onChange={updateData} />}
+                {activeStep === 5 && <NumbersSocialSection data={data} onChange={updateData} />}
+                {activeStep === 6 && <LanguageSelfCareSection data={data} onChange={updateData} />}
+                {activeStep === 7 && <SensoryAutismSection data={data} onChange={updateData} />}
+                {activeStep === 8 && <StandardTestsPlanSection data={data} onChange={updateData} />}
+
+                {/* Step Navigation Bar */}
+                <div className="flex items-center justify-between pt-6 mt-8 border-t-2 border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setActiveStep((prev) => Math.max(prev - 1, 1))}
+                    disabled={activeStep === 1}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded border-2 border-slate-400 text-xs sm:text-sm font-bold text-slate-900 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none transition-none"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Previous Section
+                  </button>
+
+                  <div className="text-xs text-slate-800 font-bold hidden sm:block">
+                    Section {activeStep} of 8 ({SECTIONS[activeStep - 1].page})
+                  </div>
+
+                  {activeStep < 8 ? (
+                    <button
+                      type="button"
+                      onClick={() => setActiveStep((prev) => Math.min(prev + 1, 8))}
+                      className="inline-flex items-center gap-1.5 px-5 py-2 rounded bg-teal-800 hover:bg-teal-900 text-white text-xs sm:text-sm font-bold border border-teal-900 transition-none"
+                    >
+                      Next Section
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setViewMode('preview');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="inline-flex items-center gap-1.5 px-5 py-2 rounded bg-emerald-800 hover:bg-emerald-900 text-white text-xs sm:text-sm font-bold border border-emerald-900 transition-none"
+                    >
+                      Review 8-Page PDF
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Split Screen Live Report Preview */}
+            {viewMode === 'split' && (
+              <div className="hidden lg:block lg:col-span-6 sticky top-20 h-[calc(100vh-6rem)] overflow-y-auto pr-2">
+                <div className="bg-slate-900 text-white rounded p-3 mb-4 flex items-center justify-between border border-slate-700">
+                  <div className="flex items-center gap-2 text-xs font-bold">
+                    <Eye className="w-4 h-4 text-teal-400" />
+                    Live 8-Page Assessment Preview (Times New Roman)
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleDownloadDirectPdf}
+                      disabled={isGeneratingPdf}
+                      className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded border border-emerald-800 transition-none"
+                    >
+                      <FileDown className="w-3.5 h-3.5" />
+                      Download PDF
+                    </button>
+                    <button
+                      onClick={handlePrint}
+                      className="inline-flex items-center gap-1 px-3 py-1 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded border border-teal-800 transition-none"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      Print
+                    </button>
+                  </div>
+                </div>
+                <div className="screen-preview-container transform origin-top scale-[0.72]">
+                  <AssessmentReport data={data} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* VIEW 2: FULL REPORT & PDF PREVIEW */}
+        {viewMode === 'preview' && (
+          <div className="max-w-5xl mx-auto w-full">
+            {/* Preview Toolbar */}
+            <div className="bg-white rounded border-2 border-slate-300 p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setViewMode('editor')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-slate-400 bg-slate-100 hover:bg-slate-200 text-slate-900 text-xs font-bold transition-none"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Back to Editor
+                </button>
+                <div className="text-xs text-slate-900 font-bold hidden sm:block">
+                  Exact 8-Page Official Document (Times New Roman &amp; Official Logo)
+                </div>
+              </div>
+
+              {/* Zoom, PDF Download & Print */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 bg-slate-100 rounded p-1 border border-slate-300">
+                  <button
+                    onClick={() => setZoomScale((prev) => Math.max(prev - 0.1, 0.5))}
+                    className="p-1 hover:bg-slate-200 rounded text-slate-800 font-bold"
+                    title="Zoom out"
+                  >
+                    <ZoomOut className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="text-xs font-mono font-bold px-1 text-slate-900">
+                    {Math.round(zoomScale * 100)}%
+                  </span>
+                  <button
+                    onClick={() => setZoomScale((prev) => Math.min(prev + 0.1, 1.3))}
+                    className="p-1 hover:bg-slate-200 rounded text-slate-800 font-bold"
+                    title="Zoom in"
+                  >
+                    <ZoomIn className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setZoomScale(1)}
+                    className="p-1 hover:bg-slate-200 rounded text-slate-800 font-bold"
+                    title="Reset Zoom (100%)"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <button
+                  onClick={handleDownloadDirectPdf}
+                  disabled={isGeneratingPdf}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-800 hover:bg-emerald-900 disabled:bg-emerald-600 text-white rounded text-xs sm:text-sm font-bold border border-emerald-900 transition-none shadow-sm"
+                >
+                  {isGeneratingPdf ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Generating PDF...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileDown className="w-4 h-4" />
+                      <span>Download PDF</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={handlePrint}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-800 hover:bg-teal-900 text-white rounded text-xs sm:text-sm font-bold border border-teal-900 transition-none"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Scaled Preview Sheet Wrapper */}
+            <div
+              className="screen-preview-container overflow-x-auto pb-12 origin-top flex flex-col items-center"
+              style={{ transform: `scale(${zoomScale})` }}
+            >
+              <AssessmentReport data={data} />
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* ========================================================
+          ISOLATED PRINT DOCUMENT CONTAINER (ALWAYS IN DOM)
+          Ensures that whenever window.print() or PDF export runs,
+          ONLY the authentic 8-page document prints, with 0% UI leaking!
+         ======================================================== */}
+      {viewMode === 'editor' && (
+        <div className="fixed -left-[9999px] top-0 pointer-events-none print:static print:left-0">
+          <AssessmentReport data={data} />
+        </div>
+      )}
+
+      {/* Firebase Cloud Assessments Modal */}
+      <CloudAssessmentsModal
+        isOpen={isCloudModalOpen}
+        onClose={() => setIsCloudModalOpen(false)}
+        currentData={data}
+        onLoadAssessment={(loadedData, cloudId) => {
+          setData(loadedData);
+          setActiveStep(1);
+          setActiveDocId(cloudId);
+        }}
+        activeDocId={activeDocId}
+        onDocIdChange={setActiveDocId}
+      />
+    </div>
+  );
+}
+
+export default App;
