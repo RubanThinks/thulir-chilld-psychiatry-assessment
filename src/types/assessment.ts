@@ -18,6 +18,9 @@ export interface AssessmentData {
   studentPhoto: string;
   name: string;
   ageSex: string;
+  ageYears?: string;
+  ageMonths?: string;
+  sex?: string;
   dob: string;
   doe: string;
   parentsGuardians: string;
