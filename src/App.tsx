@@ -11,7 +11,8 @@ import { LanguageSelfCareSection } from './components/form/sections/LanguageSelf
 import { SensoryAutismSection } from './components/form/sections/SensoryAutismSection';
 import { StandardTestsPlanSection } from './components/form/sections/StandardTestsPlanSection';
 import { CloudAssessmentsModal } from './components/common/CloudAssessmentsModal';
-import html2pdf from 'html2pdf.js';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import {
   Printer,
   FileDown,
@@ -82,39 +83,51 @@ export function App() {
     setData((prev) => ({ ...prev, ...updates }));
   };
 
-  // Direct PDF File Download using html2pdf (no browser print dialog needed)
+  // Direct High-Resolution PDF Download: exactly 8 pages matching the official protocol 1:1
   const handleDownloadDirectPdf = async () => {
-    const element = document.getElementById('pure-official-document');
-    if (!element) return;
-
     try {
       setIsGeneratingPdf(true);
       const studentNameClean = (data.name || 'Student').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
       const filename = `Thulir_Assessment_${studentNameClean}_${data.doe || 'Report'}.pdf`;
 
-      const opt = {
-        margin: 0,
-        filename: filename,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: {
+      // Query all 8 pages in the official document container
+      const container = document.getElementById('pure-official-document');
+      if (!container) {
+        throw new Error('Report document not found in DOM.');
+      }
+
+      const pages = container.querySelectorAll<HTMLElement>('.a4-page');
+      if (pages.length === 0) {
+        throw new Error('No assessment pages found to export.');
+      }
+
+      const pdf = new jsPDF({
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'portrait',
+        compress: true,
+      });
+
+      for (let i = 0; i < pages.length; i++) {
+        const page = pages[i];
+        const canvas = await html2canvas(page, {
           scale: 2,
           useCORS: true,
           logging: false,
-          scrollY: 0,
           scrollX: 0,
-        },
-        jsPDF: {
-          unit: 'mm',
-          format: 'a4',
-          orientation: 'portrait' as const,
-          compress: true,
-        },
-        pagebreak: {
-          mode: ['css'],
-        },
-      };
+          scrollY: 0,
+          backgroundColor: '#ffffff',
+        });
 
-      await html2pdf().set(opt).from(element).save();
+        const imgData = canvas.toDataURL('image/jpeg', 0.98);
+        if (i > 0) {
+          pdf.addPage('a4', 'portrait');
+        }
+        // Exactly 210mm x 297mm (full A4 sheet coverage)
+        pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+      }
+
+      pdf.save(filename);
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Could not download PDF automatically. You can use the Print button to Save as PDF.');
@@ -667,7 +680,7 @@ export function App() {
           ONLY the authentic 8-page document prints, with 0% UI leaking!
          ======================================================== */}
       {viewMode === 'editor' && (
-        <div className="fixed -left-[9999px] top-0 pointer-events-none print:static print:left-0">
+        <div className="fixed top-0 left-0 opacity-0 pointer-events-none -z-50 print:opacity-100 print:z-auto print:static">
           <AssessmentReport data={data} />
         </div>
       )}

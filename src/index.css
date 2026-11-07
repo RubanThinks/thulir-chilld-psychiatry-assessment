@@ -16,16 +16,17 @@
 }
 
 /* ========================================================
-   CALIBRATED A4 PAGE GEOMETRY (ZERO BLANK PAGES)
-   - Height strictly set to 295.5mm (safe within 297mm A4 limit)
-   - Eliminates rounding spillage and duplicate pagebreaks
+   CALIBRATED A4 PAGE GEOMETRY (ZERO BLANK PAGES, EXACT 1:1)
+   - Height strictly set to 297mm (Standard A4 limit)
+   - Box-sizing border-box prevents spillage
    ======================================================== */
 .a4-page,
 .a4-page-screen {
   width: 210mm !important;
   max-width: 210mm !important;
-  height: 295.5mm !important;
-  max-height: 295.5mm !important;
+  height: 297mm !important;
+  min-height: 297mm !important;
+  max-height: 297mm !important;
   padding: 8mm 10mm !important;
   margin: 0 auto !important;
   background: #ffffff !important;
@@ -35,7 +36,7 @@
   font-family: 'Times New Roman', Times, Georgia, serif !important;
 }
 
-/* Visible space between pages only on screen preview */
+/* Visible space between pages on screen preview */
 .screen-preview-container .a4-page {
   margin-bottom: 24px !important;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
@@ -52,9 +53,10 @@
 .assessment-border {
   border: 1.5px solid #000000 !important;
   border-radius: 12px !important;
-  padding: 10px 14px !important;
+  padding: 12px 16px !important;
   height: 100% !important;
   max-height: 100% !important;
+  width: 100% !important;
   box-sizing: border-box !important;
   display: flex !important;
   flex-direction: column !important;
@@ -120,10 +122,20 @@
     padding: 8mm 10mm !important;
     width: 210mm !important;
     max-width: 210mm !important;
-    height: 295.5mm !important;
-    max-height: 295.5mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
     border-radius: 0 !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .a4-page:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
   }
 }
