@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import type { AssessmentData } from './types/assessment';
-import { emptyAssessment, sampleDemoAssessment } from './data/initialData';
+import { emptyAssessment } from './data/initialData';
 import { AssessmentReport } from './components/preview/AssessmentReport';
 import { DemographicsSection } from './components/form/sections/DemographicsSection';
 import { MedicalFamilySection } from './components/form/sections/MedicalFamilySection';
@@ -19,8 +19,6 @@ import {
   Eye,
   Edit,
   Columns,
-  Download,
-  Upload,
   RotateCcw,
   ChevronLeft,
   ChevronRight,
@@ -50,12 +48,15 @@ export function App() {
     try {
       const saved = localStorage.getItem('thulir_assessment_current');
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          return parsed;
+        }
       }
     } catch (e) {
       console.error('Error reading from localStorage', e);
     }
-    return sampleDemoAssessment;
+    return emptyAssessment;
   });
 
   const [activeStep, setActiveStep] = useState(1);
@@ -66,7 +67,6 @@ export function App() {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
-  const fileImportRef = useRef<HTMLInputElement>(null);
 
   // Auto-save to localStorage
   useEffect(() => {
@@ -140,49 +140,17 @@ export function App() {
     window.print();
   };
 
-  const handleExportJson = () => {
-    const filename = `Thulir_Assessment_${(data.name || 'Student').replace(/\s+/g, '_')}_${data.doe || 'Report'}.json`;
-    const jsonStr = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const parsed = JSON.parse(event.target?.result as string);
-          if (parsed && typeof parsed === 'object') {
-            setData(parsed);
-            alert('Assessment loaded successfully!');
-          }
-        } catch (err) {
-          alert('Invalid JSON file format.');
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
-
   const handleResetForm = () => {
-    if (confirm('Start a new blank assessment? Any unsaved changes will be cleared.')) {
+    if (confirm('Start a new blank child assessment? Any unsaved changes in current form will be cleared.')) {
       setData(emptyAssessment);
       setActiveStep(1);
       setActiveDocId(null);
+      try {
+        localStorage.removeItem('thulir_assessment_current');
+      } catch (e) {
+        // ignore
+      }
     }
-  };
-
-  const handleLoadDemo = () => {
-    setData(sampleDemoAssessment);
-    setActiveStep(1);
-    setActiveDocId(null);
   };
 
   const calculateCompletion = () => {
@@ -320,50 +288,26 @@ export function App() {
             </button>
 
             {/* Desktop Quick Tools */}
-            <div className="hidden lg:flex items-center gap-1.5 border-l-2 border-slate-300 pl-2">
+            <div className="hidden lg:flex items-center gap-2 border-l-2 border-slate-300 pl-3">
               <button
                 onClick={() => setIsCloudModalOpen(true)}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-teal-900 bg-teal-50 hover:bg-teal-100 border border-teal-300 rounded transition-none shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-bold text-teal-950 bg-teal-50 hover:bg-teal-100 border border-teal-300 rounded transition-none shadow-xs"
                 title="Firebase Cloud Assessments (Save / Load / Manage)"
               >
-                <Cloud className="w-3.5 h-3.5 text-teal-700" />
-                <span>Cloud</span>
-                {activeDocId && <span className="w-2 h-2 rounded-full bg-teal-600 inline-block"></span>}
+                <Cloud className="w-4 h-4 text-teal-700" />
+                <span>Cloud Records</span>
+                {activeDocId && (
+                  <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block" title="Synced to Firebase Cloud"></span>
+                )}
               </button>
-              <button
-                onClick={handleLoadDemo}
-                className="px-2.5 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-200 border border-slate-300 rounded transition-none"
-                title="Load sample child assessment case"
-              >
-                Load Sample
-              </button>
+
               <button
                 onClick={handleResetForm}
-                className="p-1.5 text-slate-700 hover:text-red-700 hover:bg-slate-200 border border-slate-300 rounded transition-none"
-                title="Reset Blank Assessment"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-bold text-slate-700 hover:text-red-700 hover:bg-slate-200 border border-slate-300 rounded transition-none"
+                title="Start a new blank child assessment"
               >
                 <RotateCcw className="w-4 h-4" />
-              </button>
-              <button
-                onClick={handleExportJson}
-                className="p-1.5 text-slate-700 hover:text-slate-900 hover:bg-slate-200 border border-slate-300 rounded transition-none"
-                title="Export Assessment JSON"
-              >
-                <Download className="w-4 h-4" />
-              </button>
-              <input
-                type="file"
-                ref={fileImportRef}
-                onChange={handleImportJson}
-                accept=".json"
-                className="hidden"
-              />
-              <button
-                onClick={() => fileImportRef.current?.click()}
-                className="p-1.5 text-slate-700 hover:text-slate-900 hover:bg-slate-200 border border-slate-300 rounded transition-none"
-                title="Import Assessment JSON"
-              >
-                <Upload className="w-4 h-4" />
+                <span>New Assessment</span>
               </button>
             </div>
           </div>
@@ -372,55 +316,52 @@ export function App() {
         {/* Mobile Dropdown Menu */}
         {mobileMenuOpen && (
           <div className="lg:hidden border-t-2 border-slate-300 bg-white px-4 py-3 space-y-2">
-            <div className="flex flex-wrap gap-2 pb-2 border-b border-slate-200">
+            <div className="flex flex-col gap-2 pb-2 border-b border-slate-200">
               <button
                 onClick={() => {
                   setIsCloudModalOpen(true);
                   setMobileMenuOpen(false);
                 }}
-                className="px-3 py-1.5 text-xs font-bold text-teal-900 bg-teal-50 border border-teal-300 rounded inline-flex items-center gap-1.5"
+                className="px-3 py-2 text-xs font-bold text-teal-900 bg-teal-50 border border-teal-300 rounded inline-flex items-center justify-center gap-1.5 w-full"
               >
-                <Cloud className="w-3.5 h-3.5 text-teal-700" />
-                Cloud Assessments (Firebase)
+                <Cloud className="w-4 h-4 text-teal-700" />
+                <span>Cloud Assessments (Firebase)</span>
+                {activeDocId && (
+                  <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block"></span>
+                )}
               </button>
               <button
                 onClick={() => {
                   handleDownloadDirectPdf();
                   setMobileMenuOpen(false);
                 }}
-                className="px-3 py-1.5 text-xs font-bold text-emerald-900 bg-emerald-100 border border-emerald-300 rounded"
+                className="px-3 py-2 text-xs font-bold text-emerald-900 bg-emerald-100 border border-emerald-300 rounded w-full inline-flex items-center justify-center gap-1.5"
               >
+                <FileDown className="w-4 h-4" />
                 Download PDF
               </button>
               <button
                 onClick={() => {
-                  handleLoadDemo();
+                  handlePrint();
                   setMobileMenuOpen(false);
                 }}
-                className="px-3 py-1.5 text-xs font-bold text-teal-800 bg-teal-100 border border-teal-300 rounded"
+                className="px-3 py-2 text-xs font-bold text-teal-900 bg-teal-100 border border-teal-300 rounded w-full inline-flex items-center justify-center gap-1.5"
               >
-                Load Sample Case
+                <Printer className="w-4 h-4" />
+                Print Document
               </button>
               <button
                 onClick={() => {
                   handleResetForm();
                   setMobileMenuOpen(false);
                 }}
-                className="px-3 py-1.5 text-xs font-bold text-red-800 bg-red-100 border border-red-300 rounded"
+                className="px-3 py-2 text-xs font-bold text-red-800 bg-red-100 border border-red-300 rounded w-full inline-flex items-center justify-center gap-1.5"
               >
-                Clear / New Blank
-              </button>
-              <button
-                onClick={() => {
-                  handleExportJson();
-                  setMobileMenuOpen(false);
-                }}
-                className="px-3 py-1.5 text-xs font-bold text-slate-800 bg-slate-200 border border-slate-300 rounded"
-              >
-                Export JSON
+                <RotateCcw className="w-4 h-4" />
+                New Blank Assessment
               </button>
             </div>
-            <div className="text-xs text-slate-700 flex items-center justify-between font-medium">
+            <div className="text-xs text-slate-700 flex items-center justify-between font-medium pt-1">
               <span>Auto-saved to device</span>
               <span className="font-bold text-slate-900">{lastSavedTime}</span>
             </div>
