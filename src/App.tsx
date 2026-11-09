@@ -17,6 +17,7 @@ import {
   deleteAssessmentFromCloud,
   getNextSequentialStudentId,
   extractRegisteredStudents,
+  validateStudentBeforeSave,
   type CloudAssessmentSummary,
   type RegisteredStudent,
 } from './services/firebase';
@@ -124,17 +125,54 @@ export function App() {
     });
   }, [cloudAssessments, activeDocId]);
 
-  // Direct 1-Click Save to Firebase Firestore Cloud
+  // Direct 1-Click Save to Firebase Firestore Cloud with Pre-Save Verification
   const handleSaveToCloud = async () => {
+    if (!data.name || !data.name.trim()) {
+      alert('Please enter the Student Name in Page 1: Demographics before saving to Cloud.');
+      setActiveStep(1);
+      return;
+    }
+
+    let payload = { ...data };
+
+    // Run pre-save verification (checks ID uniqueness, name match, and demographic modification)
+    const validation = validateStudentBeforeSave(payload, registeredStudents, nextSequentialId);
+
+    if (!validation.isValid && validation.status === 'existing_name_mismatch') {
+      const confirmAssignNext = confirm(
+        `${validation.message}\n\nClick "OK" to assign next unique ID "${validation.suggestedUniqueId || nextSequentialId}" and save.\n\nClick "Cancel" to return and review student details.`
+      );
+      if (!confirmAssignNext) {
+        setActiveStep(1);
+        return;
+      }
+      payload.studentId = validation.suggestedUniqueId || nextSequentialId;
+      setData((prev) => ({ ...prev, studentId: payload.studentId }));
+    } else if (!payload.studentId && validation.suggestedUniqueId) {
+      payload.studentId = validation.suggestedUniqueId;
+      setData((prev) => ({ ...prev, studentId: payload.studentId }));
+    }
+
     setIsSavingCloud(true);
     try {
-      const savedDocId = await saveAssessmentToCloud(data, activeDocId || undefined);
+      const savedDocId = await saveAssessmentToCloud(payload, activeDocId || undefined);
       setActiveDocId(savedDocId);
       const now = new Date();
       const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       setCloudSaveStatus({ isSynced: true, time: timeStr });
       await loadCloudList();
-      alert(`Assessment for "${data.name || 'Student'}" successfully saved to Cloud!\nDocument ID: ${savedDocId}`);
+
+      if (validation.status === 'existing_demographics_updated') {
+        alert(
+          `Assessment for "${payload.name}" successfully saved to Cloud!\nDocument ID: ${savedDocId}\n\nMaster profile updated: Demographic changes (DOB, diagnosis, parents/guardians, or address) have been synchronized across the portal.`
+        );
+      } else if (validation.status === 'new_unique') {
+        alert(
+          `Assessment for new student "${payload.name}" (ID: ${payload.studentId}) successfully registered & saved to Cloud!\nDocument ID: ${savedDocId}`
+        );
+      } else {
+        alert(`Assessment for "${payload.name || 'Student'}" successfully saved to Cloud!\nDocument ID: ${savedDocId}`);
+      }
     } catch (err: any) {
       console.error('Save to cloud failed:', err);
       alert(`Could not save to Cloud: ${err.message || 'Firebase error'}`);

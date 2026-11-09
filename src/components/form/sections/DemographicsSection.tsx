@@ -14,7 +14,8 @@ import {
   Edit3,
   Users,
   CheckCircle2,
-  UserPlus
+  UserPlus,
+  AlertTriangle
 } from 'lucide-react';
 
 interface Props {
@@ -46,6 +47,31 @@ export const DemographicsSection: React.FC<Props> = ({
       ) || null
     );
   }, [data.studentId, registeredStudents]);
+
+  // Real-time mismatch detection: ID belongs to someone else in the database
+  const nameMismatch = useMemo(() => {
+    if (!matchedExistingStudent || !data.name) return null;
+    const existingNorm = matchedExistingStudent.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const currentNorm = data.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (existingNorm && currentNorm && existingNorm !== currentNorm) {
+      return {
+        existingName: matchedExistingStudent.name,
+        existingId: matchedExistingStudent.studentId,
+      };
+    }
+    return null;
+  }, [matchedExistingStudent, data.name]);
+
+  // Check if demographics are modified from stored profile
+  const isDemographicsModified = useMemo(() => {
+    if (!matchedExistingStudent) return false;
+    return (
+      Boolean(matchedExistingStudent.dob && data.dob && matchedExistingStudent.dob !== data.dob) ||
+      Boolean(matchedExistingStudent.diagnosis && data.diagnosis && matchedExistingStudent.diagnosis !== data.diagnosis) ||
+      Boolean(matchedExistingStudent.parentsGuardians && data.parentsGuardians && matchedExistingStudent.parentsGuardians !== data.parentsGuardians) ||
+      Boolean(matchedExistingStudent.address && data.address && matchedExistingStudent.address !== data.address)
+    );
+  }, [matchedExistingStudent, data.dob, data.diagnosis, data.parentsGuardians, data.address]);
 
   // Auto-populate demographics when selecting or typing an existing student ID
   const applyStudentProfile = (student: RegisteredStudent) => {
@@ -266,18 +292,46 @@ export const DemographicsSection: React.FC<Props> = ({
           </div>
         </div>
 
+        {/* Name / ID Collision Warning Banner */}
+        {nameMismatch && (
+          <div className="bg-amber-50 border-2 border-amber-400 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-amber-950 font-medium">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              <div>
+                <strong>Warning: Student ID Collision!</strong> ID <strong>{nameMismatch.existingId}</strong> is already registered to &ldquo;{nameMismatch.existingName}&rdquo; in the database.
+                If &ldquo;{data.name}&rdquo; is a new student, click to assign the next unique ID to avoid accidental overwrite.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onChange({ studentId: nextSequentialId })}
+              className="px-2.5 py-1 bg-amber-700 hover:bg-amber-800 text-white font-bold rounded shrink-0 transition-none shadow-2xs cursor-pointer"
+            >
+              Assign Next Unique ID ({nextSequentialId})
+            </button>
+          </div>
+        )}
+
         {/* Dynamic Context Feedback */}
         {matchedExistingStudent ? (
-          <div className="bg-emerald-50 border border-emerald-300 rounded p-2.5 flex items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-2 text-emerald-950 font-semibold">
-              <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
-              <span>
-                Existing Profile Loaded: <strong>{matchedExistingStudent.name}</strong> (ID: {matchedExistingStudent.studentId}). Demographics auto-populated from database.
+          <div className="bg-emerald-50 border border-emerald-300 rounded p-2.5 space-y-1.5">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 text-emerald-950 font-semibold">
+                <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                <span>
+                  Existing Profile Loaded: <strong>{matchedExistingStudent.name}</strong> (ID: {matchedExistingStudent.studentId}). Demographics auto-populated from database.
+                </span>
+              </div>
+              <span className="text-[11px] bg-emerald-200 text-emerald-950 font-bold px-2 py-0.5 rounded shrink-0">
+                {matchedExistingStudent.assessmentCount} Previous Eval{matchedExistingStudent.assessmentCount === 1 ? '' : 's'}
               </span>
             </div>
-            <span className="text-[11px] bg-emerald-200 text-emerald-950 font-bold px-2 py-0.5 rounded shrink-0">
-              {matchedExistingStudent.assessmentCount} Previous Eval{matchedExistingStudent.assessmentCount === 1 ? '' : 's'}
-            </span>
+            {isDemographicsModified && (
+              <div className="flex items-center gap-1.5 text-[11px] text-amber-800 bg-amber-100/70 border border-amber-200 rounded px-2 py-1 font-medium">
+                <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                <span>Demographics modified from stored record &bull; Master student profile will be updated when saved to cloud.</span>
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-teal-50/60 border border-teal-200 rounded p-2 flex items-center justify-between text-xs text-teal-950">

@@ -353,3 +353,74 @@ export async function getStudentProfileFromCloud(studentId: string): Promise<Par
   }
   return null;
 }
+
+export interface StudentValidationResult {
+  isValid: boolean;
+  status: 'new_unique' | 'existing_match' | 'existing_name_mismatch' | 'existing_demographics_updated';
+  existingStudent?: RegisteredStudent;
+  message?: string;
+  suggestedUniqueId?: string;
+}
+
+/**
+ * Pre-save verification: Checks whether Student ID & Name match the database,
+ * prevents accidental collisions, and detects demographic modifications.
+ */
+export function validateStudentBeforeSave(
+  data: AssessmentData,
+  registeredStudents: RegisteredStudent[],
+  suggestedNextId: string
+): StudentValidationResult {
+  const currentId = (data.studentId || '').trim().toUpperCase();
+  const currentName = (data.name || '').trim();
+
+  if (!currentId) {
+    return {
+      isValid: false,
+      status: 'new_unique',
+      message: 'Student ID is missing. A unique Student ID will be assigned.',
+      suggestedUniqueId: suggestedNextId,
+    };
+  }
+
+  // Look for any existing student record in database with this Student ID
+  const existing = registeredStudents.find(
+    (s) => s.studentId && s.studentId.toUpperCase() === currentId
+  );
+
+  // Case 1: ID does not exist in database yet -> Verified new unique student!
+  if (!existing) {
+    return {
+      isValid: true,
+      status: 'new_unique',
+    };
+  }
+
+  // Case 2: ID exists in database
+  const existingNormName = (existing.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const currentNormName = currentName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  // Subcase 2A: Names match (same student)
+  if (!currentNormName || existingNormName === currentNormName) {
+    const isDemographicsChanged =
+      Boolean(existing.dob && data.dob && existing.dob !== data.dob) ||
+      Boolean(existing.diagnosis && data.diagnosis && existing.diagnosis !== data.diagnosis) ||
+      Boolean(existing.parentsGuardians && data.parentsGuardians && existing.parentsGuardians !== data.parentsGuardians) ||
+      Boolean(existing.address && data.address && existing.address !== data.address);
+
+    return {
+      isValid: true,
+      status: isDemographicsChanged ? 'existing_demographics_updated' : 'existing_match',
+      existingStudent: existing,
+    };
+  }
+
+  // Subcase 2B: ID exists, but entered name is completely different (Collision / Misalignment)
+  return {
+    isValid: false,
+    status: 'existing_name_mismatch',
+    existingStudent: existing,
+    suggestedUniqueId: suggestedNextId,
+    message: `Student ID "${currentId}" is already registered in the database for "${existing.name}".\n\nYou entered a different name: "${currentName}".\n\nTo prevent overwriting "${existing.name}"'s records, would you like to assign the next available unique Student ID ("${suggestedNextId}")?`,
+  };
+}
