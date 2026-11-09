@@ -172,14 +172,7 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
             <div className="flex items-start">
               <span className="w-56 shrink-0 font-semibold text-black">Family tree</span>
               <span className="w-3 shrink-0 text-center">:</span>
-              <div className="flex-1 min-h-[70px]">
-                {data.familyHistory.familyTreeImage && (
-                  <img
-                    src={data.familyHistory.familyTreeImage}
-                    alt="Family Tree"
-                    className="max-h-24 object-contain border border-black rounded mb-1"
-                  />
-                )}
+              <div className="flex-1">
                 <span className="text-black break-words leading-relaxed">{data.familyHistory.familyTree || ''}</span>
               </div>
             </div>

@@ -1,9 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React from 'react';
 import type { AssessmentData } from '../../../types/assessment';
 import { WordLimitTextarea } from '../WordLimitTextarea';
 import { WORD_LIMITS } from '../../../utils/wordLimits';
-import { FileText, Users, GraduationCap, Eye, Upload, Trash2, Loader2 } from 'lucide-react';
-import { uploadToCloudinary } from '../../../services/cloudinary';
+import { FileText, Users, GraduationCap, Eye } from 'lucide-react';
 
 interface Props {
   data: AssessmentData;
@@ -11,43 +10,6 @@ interface Props {
 }
 
 export const MedicalFamilySection: React.FC<Props> = ({ data, onChange }) => {
-  const familyTreeFileRef = useRef<HTMLInputElement>(null);
-  const [isUploadingTree, setIsUploadingTree] = useState(false);
-
-  const handleFamilyTreeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploadingTree(true);
-    try {
-      const cloudUrl = await uploadToCloudinary(file, { folder: 'thulir_family_trees' });
-      onChange({
-        familyHistory: {
-          ...data.familyHistory,
-          familyTreeImage: cloudUrl,
-        },
-      });
-    } catch (err) {
-      console.warn('Cloudinary upload fallback to local reader:', err);
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        if (ev.target?.result) {
-          onChange({
-            familyHistory: {
-              ...data.familyHistory,
-              familyTreeImage: ev.target.result as string,
-            },
-          });
-        }
-      };
-      reader.readAsDataURL(file);
-    } finally {
-      setIsUploadingTree(false);
-      if (familyTreeFileRef.current) {
-        familyTreeFileRef.current.value = '';
-      }
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -79,63 +41,11 @@ export const MedicalFamilySection: React.FC<Props> = ({ data, onChange }) => {
           Family History
         </h4>
 
-        {/* Family Tree notes & image upload */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold text-slate-900 tracking-wide uppercase">
-              Family Tree / Pedigree
-            </label>
-            <input
-              type="file"
-              ref={familyTreeFileRef}
-              onChange={handleFamilyTreeUpload}
-              accept="image/*"
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => familyTreeFileRef.current?.click()}
-              disabled={isUploadingTree}
-              className="inline-flex items-center gap-1 text-xs text-teal-900 font-bold bg-white hover:bg-slate-100 disabled:opacity-60 px-2.5 py-1 rounded border border-slate-400 transition-none"
-            >
-              {isUploadingTree ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Uploading to Cloud...
-                </>
-              ) : (
-                <>
-                  <Upload className="w-3.5 h-3.5 text-slate-700" />
-                  Upload Family Tree Diagram
-                </>
-              )}
-            </button>
-          </div>
-
-          {data.familyHistory.familyTreeImage && (
-            <div className="flex items-center gap-3 p-2 bg-white rounded border border-slate-300">
-              <img
-                src={data.familyHistory.familyTreeImage}
-                alt="Family tree"
-                className="h-16 w-24 object-contain rounded border border-slate-300"
-              />
-              <div className="flex-1 text-xs text-slate-800 font-medium">
-                Uploaded family tree diagram will appear on Page 2 report.
-              </div>
-              <button
-                type="button"
-                onClick={() =>
-                  onChange({
-                    familyHistory: { ...data.familyHistory, familyTreeImage: '' },
-                  })
-                }
-                className="p-1.5 text-red-700 hover:bg-red-50 rounded border border-red-300"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
+        {/* Family Tree notes */}
+        <div className="space-y-1.5">
+          <label className="block text-xs font-bold text-slate-900 tracking-wide uppercase">
+            Family Tree / Pedigree
+          </label>
           <input
             type="text"
             value={data.familyHistory.familyTree}
