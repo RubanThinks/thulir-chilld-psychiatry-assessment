@@ -82,7 +82,13 @@ export function App() {
   const [lastSavedTime, setLastSavedTime] = useState<string>('Just now');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const [activeDocId, setActiveDocId] = useState<string | null>(null);
+  const [activeDocId, setActiveDocId] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('thulir_active_doc_id') || null;
+    } catch (e) {
+      return null;
+    }
+  });
   const [cloudAssessments, setCloudAssessments] = useState<CloudAssessmentSummary[]>([]);
   const [isLoadingAssessments, setIsLoadingAssessments] = useState(false);
   const [isSavingCloud, setIsSavingCloud] = useState(false);
@@ -92,21 +98,108 @@ export function App() {
     time: '',
   });
 
+  const updateActiveDocId = (id: string | null) => {
+    setActiveDocId(id);
+    try {
+      if (id) {
+        localStorage.setItem('thulir_active_doc_id', id);
+      } else {
+        localStorage.removeItem('thulir_active_doc_id');
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
+
   // Extract unique registered student directory for universal ID mapping & demographic auto-fill
   const registeredStudents: RegisteredStudent[] = useMemo(() => {
     return extractRegisteredStudents(cloudAssessments);
   }, [cloudAssessments]);
 
-  // Load Cloud Assessments List from Firebase Firestore
+  // Reset form to a clean new blank evaluation
+  const resetToCleanForm = async (list?: CloudAssessmentSummary[]) => {
+    const records = list || cloudAssessments;
+    const nextId = await getNextSequentialStudentId(records);
+    setData({ ...emptyAssessment, studentId: nextId });
+    updateActiveDocId(null);
+    setActiveStep(1);
+    setCloudSaveStatus({ isSynced: false, time: '' });
+    try {
+      localStorage.removeItem('thulir_assessment_current');
+      localStorage.removeItem('thulir_active_doc_id');
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  // Load Cloud Assessments List from Firebase Firestore & Reconcile with Local Cache
   const loadCloudList = async () => {
     setIsLoadingAssessments(true);
     try {
       const list = await listCloudAssessments();
       setCloudAssessments(list);
+
+      // Reconcile current assessment with live database:
+      // If the assessment was deleted from cloud (or database is empty), purge local draft
+      const storedActiveId = localStorage.getItem('thulir_active_doc_id') || activeDocId;
+
+      // 1. If database has NO assessments, clear any lingering deleted testing assessment
+      if (list.length === 0) {
+        if (data.name || (data.studentId && data.studentId !== 'TH-100') || storedActiveId) {
+          await resetToCleanForm(list);
+        }
+        return;
+      }
+
+      // 2. If active form was editing a specific cloud document that was deleted from database
+      if (storedActiveId) {
+        const stillInDb = list.some((item) => item.id === storedActiveId);
+        if (!stillInDb) {
+          await resetToCleanForm(list);
+          return;
+        }
+      }
+
+      // 3. If form contains an assessment that was deleted from the cloud database
+      if (data.name) {
+        const nextId = await getNextSequentialStudentId(list);
+        const matchesCloudRecord = list.some(
+          (item) =>
+            (item.studentId && data.studentId && item.studentId.toUpperCase() === data.studentId.toUpperCase()) ||
+            (item.studentName && item.studentName.trim().toLowerCase() === data.name.trim().toLowerCase())
+        );
+
+        // If it was not found in cloud and is NOT an in-progress draft on the next sequential ID
+        if (!matchesCloudRecord && data.studentId !== nextId) {
+          await resetToCleanForm(list);
+          return;
+        }
+      }
     } catch (err) {
       console.error('Error fetching cloud assessments:', err);
     } finally {
       setIsLoadingAssessments(false);
+    }
+  };
+
+  // Handler when an assessment is deleted from Student Directory or Modal
+  const handleAssessmentDeleted = async (deletedDocId: string) => {
+    const storedActiveId = localStorage.getItem('thulir_active_doc_id') || activeDocId;
+    const isCurrentActive = storedActiveId === deletedDocId;
+
+    const freshList = await listCloudAssessments();
+    setCloudAssessments(freshList);
+
+    const matchesCurrent =
+      isCurrentActive ||
+      !freshList.some(
+        (item) =>
+          (item.studentId && data.studentId && item.studentId.toUpperCase() === data.studentId.toUpperCase()) ||
+          (item.studentName && data.name && item.studentName.trim().toLowerCase() === data.name.trim().toLowerCase())
+      );
+
+    if (isCurrentActive || (data.name && matchesCurrent)) {
+      await resetToCleanForm(freshList);
     }
   };
 
@@ -157,21 +250,11 @@ export function App() {
     try {
       const savedDocId = await saveAssessmentToCloud(payload, activeDocId || undefined);
       
-      // Fetch fresh cloud assessments list and calculate next sequential student ID
+      // Fetch fresh cloud assessments list and reset form to a fresh blank assessment ready for the next entry
       const freshAssessments = await listCloudAssessments();
       setCloudAssessments(freshAssessments);
       const nextNewId = await getNextSequentialStudentId(freshAssessments);
-
-      // Refresh form to a fresh blank assessment ready for the next entry
-      setData({ ...emptyAssessment, studentId: nextNewId });
-      setActiveDocId(null);
-      setActiveStep(1);
-      setCloudSaveStatus({ isSynced: false, time: '' });
-      try {
-        localStorage.removeItem('thulir_assessment_current');
-      } catch (e) {
-        // ignore
-      }
+      await resetToCleanForm(freshAssessments);
 
       if (validation.status === 'existing_demographics_updated') {
         alert(
@@ -269,16 +352,7 @@ export function App() {
 
   const handleResetForm = async () => {
     if (confirm('Start a new blank child assessment? Any unsaved changes in current form will be cleared.')) {
-      const nextId = await getNextSequentialStudentId(cloudAssessments);
-      setData({ ...emptyAssessment, studentId: nextId });
-      setActiveStep(1);
-      setActiveDocId(null);
-      setCloudSaveStatus({ isSynced: false, time: '' });
-      try {
-        localStorage.removeItem('thulir_assessment_current');
-      } catch (e) {
-        // ignore
-      }
+      await resetToCleanForm();
     }
   };
 
@@ -295,15 +369,9 @@ export function App() {
 
     try {
       await deleteAssessmentFromCloud(activeDocId);
-      setData(emptyAssessment);
-      setActiveDocId(null);
-      setCloudSaveStatus({ isSynced: false, time: '' });
-      try {
-        localStorage.removeItem('thulir_assessment_current');
-      } catch (e) {
-        // ignore
-      }
-      await loadCloudList();
+      const freshList = await listCloudAssessments();
+      setCloudAssessments(freshList);
+      await resetToCleanForm(freshList);
       alert(`Assessment for "${studentName}" has been permanently deleted from Firebase Cloud.`);
     } catch (err: any) {
       alert(`Failed to delete assessment: ${err.message || 'Firebase error'}`);
@@ -951,9 +1019,10 @@ export function App() {
             assessments={cloudAssessments}
             isLoading={isLoadingAssessments}
             onRefresh={loadCloudList}
+            onAssessmentDeleted={handleAssessmentDeleted}
             onSelectAssessment={(selData, docId, targetView) => {
               setData(selData);
-              setActiveDocId(docId);
+              updateActiveDocId(docId);
               setCloudSaveStatus({ isSynced: true, time: 'Cloud Record' });
               setActiveStep(1);
               setViewMode(targetView);
@@ -973,18 +1042,14 @@ export function App() {
                 doe: new Date().toISOString().split('T')[0],
               };
               setData(followUpData);
-              setActiveDocId(null); // Fresh document in cloud, so it won't overwrite past assessments!
+              updateActiveDocId(null); // Fresh document in cloud, so it won't overwrite past assessments!
               setCloudSaveStatus({ isSynced: false, time: '' });
               setActiveStep(1);
               setViewMode('editor');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             onStartBlankAssessment={async () => {
-              const nextId = await getNextSequentialStudentId(cloudAssessments);
-              setData({ ...emptyAssessment, studentId: nextId });
-              setActiveDocId(null);
-              setCloudSaveStatus({ isSynced: false, time: '' });
-              setActiveStep(1);
+              await resetToCleanForm(cloudAssessments);
               setViewMode('editor');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}

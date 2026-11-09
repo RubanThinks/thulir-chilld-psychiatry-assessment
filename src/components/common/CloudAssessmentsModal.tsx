@@ -27,6 +27,7 @@ interface Props {
   activeDocId: string | null;
   onDocIdChange: (id: string | null) => void;
   onSaved?: () => void;
+  onAssessmentDeleted?: (id: string) => void;
 }
 
 export const CloudAssessmentsModal: React.FC<Props> = ({
@@ -37,6 +38,7 @@ export const CloudAssessmentsModal: React.FC<Props> = ({
   activeDocId,
   onDocIdChange,
   onSaved,
+  onAssessmentDeleted,
 }) => {
   const [assessments, setAssessments] = useState<CloudAssessmentSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -129,7 +131,11 @@ export const CloudAssessmentsModal: React.FC<Props> = ({
         type: 'success',
         text: 'Assessment removed from Firebase cloud.',
       });
-      if (onSaved) onSaved();
+      if (onAssessmentDeleted) {
+        onAssessmentDeleted(id);
+      } else if (onSaved) {
+        onSaved();
+      }
     } catch (err: any) {
       alert(`Could not delete: ${err.message}`);
     }

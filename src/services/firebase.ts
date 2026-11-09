@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  where,
 } from 'firebase/firestore';
 import type { AssessmentData } from '../types/assessment';
 
@@ -184,11 +185,36 @@ export async function loadAssessmentFromCloud(id: string): Promise<AssessmentDat
 }
 
 /**
- * Delete assessment from Firestore by ID
+ * Delete assessment from Firestore by ID and clean up orphaned student records
  */
 export async function deleteAssessmentFromCloud(id: string): Promise<void> {
   const docRef = doc(db, 'assessments', id);
+  let studentIdToDelete: string | null = null;
+  try {
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const d = snap.data();
+      studentIdToDelete = d.studentId || d.data?.studentId || null;
+    }
+  } catch (e) {
+    // ignore
+  }
+
   await deleteDoc(docRef);
+
+  // If this student has no other assessments remaining in the database, clean up the master student document
+  if (studentIdToDelete && studentIdToDelete.trim()) {
+    try {
+      const q = query(collection(db, 'assessments'), where('studentId', '==', studentIdToDelete.trim()));
+      const snapRemaining = await getDocs(q);
+      if (snapRemaining.empty) {
+        const cleanStudentKey = studentIdToDelete.trim().toUpperCase().replace(/[^a-zA-Z0-9_-]/g, '_');
+        await deleteDoc(doc(db, 'students', cleanStudentKey));
+      }
+    } catch (e) {
+      console.warn('Could not clean up master student document:', e);
+    }
+  }
 }
 
 /**

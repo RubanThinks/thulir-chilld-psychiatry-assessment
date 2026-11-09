@@ -31,6 +31,7 @@ interface Props {
   onStartBlankAssessment: () => void;
   onDownloadPdfForData: (data: AssessmentData) => void;
   activeDocId: string | null;
+  onAssessmentDeleted?: (id: string) => void;
 }
 
 export const StudentDirectory: React.FC<Props> = ({
@@ -42,6 +43,7 @@ export const StudentDirectory: React.FC<Props> = ({
   onStartBlankAssessment,
   onDownloadPdfForData,
   activeDocId,
+  onAssessmentDeleted,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'multiple' | 'recent'>('all');
@@ -188,7 +190,11 @@ export const StudentDirectory: React.FC<Props> = ({
     setDeletingId(id);
     try {
       await deleteAssessmentFromCloud(id);
-      onRefresh();
+      if (onAssessmentDeleted) {
+        onAssessmentDeleted(id);
+      } else {
+        onRefresh();
+      }
     } catch (err: any) {
       alert(`Delete failed: ${err.message || 'Firebase error'}`);
     } finally {
