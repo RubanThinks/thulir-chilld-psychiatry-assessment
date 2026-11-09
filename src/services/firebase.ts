@@ -46,6 +46,7 @@ if (typeof window !== 'undefined') {
 
 export interface CloudAssessmentSummary {
   id: string;
+  studentId?: string;
   studentName: string;
   studentPhoto?: string;
   ageSex: string;
@@ -63,14 +64,16 @@ export interface CloudAssessmentSummary {
  * Save assessment to Firestore
  */
 export async function saveAssessmentToCloud(data: AssessmentData, existingId?: string): Promise<string> {
+  const cleanId = (data.studentId || '').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
   const cleanName = (data.name || 'Student').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
   const cleanDoe = (data.doe || 'Eval').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
-  const docId = existingId || `${cleanName}_${cleanDoe}_${Date.now()}`;
+  const docId = existingId || (cleanId ? `${cleanId}_${cleanDoe}_${Date.now()}` : `${cleanName}_${cleanDoe}_${Date.now()}`);
 
   const docRef = doc(db, 'assessments', docId);
   await setDoc(
     docRef,
     {
+      studentId: data.studentId || '',
       studentName: data.name || 'Unnamed Student',
       studentPhoto: data.studentPhoto || '',
       dob: data.dob || '',
@@ -119,6 +122,7 @@ export async function listCloudAssessments(): Promise<CloudAssessmentSummary[]> 
 
     return {
       id: docSnap.id,
+      studentId: d.studentId || assessmentPayload.studentId || '',
       studentName: d.studentName || assessmentPayload.name || 'Unnamed Student',
       studentPhoto: d.studentPhoto || assessmentPayload.studentPhoto || '',
       ageSex: d.ageSex || assessmentPayload.ageSex || '',

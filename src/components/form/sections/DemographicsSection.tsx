@@ -10,7 +10,8 @@ import {
   Activity,
   Stethoscope,
   Calculator,
-  Edit3
+  Edit3,
+  Sparkles
 } from 'lucide-react';
 
 interface Props {
@@ -125,8 +126,38 @@ export const DemographicsSection: React.FC<Props> = ({ data, onChange }) => {
 
       {/* Primary Details Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Student ID / Reg. No. */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs font-bold text-slate-900 tracking-wide uppercase">
+              Student ID / Reg. No.
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                const year = new Date().getFullYear();
+                const rand = Math.floor(1000 + Math.random() * 9000);
+                onChange({ studentId: `TH-${year}-${rand}` });
+              }}
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-800 hover:text-teal-950 bg-teal-50 hover:bg-teal-100 border border-teal-300 px-2 py-0.5 rounded transition-none"
+              title="Auto-generate a clinic registration ID"
+            >
+              <Sparkles className="w-3 h-3 text-teal-700" />
+              Auto-generate
+            </button>
+          </div>
+          <input
+            type="text"
+            value={data.studentId || ''}
+            onChange={(e) => onChange({ studentId: e.target.value.toUpperCase() })}
+            placeholder="e.g. TH-2026-0042"
+            className="w-full px-3 py-2 rounded border border-slate-300 focus:border-teal-700 focus:ring-1 focus:ring-teal-700 text-sm text-slate-900 font-mono bg-white uppercase font-bold tracking-wide"
+          />
+          <p className="text-[11px] text-slate-700 mt-1">Unique registration code for tracking across all assessments</p>
+        </div>
+
         {/* Student Full Name */}
-        <div className="md:col-span-2">
+        <div>
           <label className="block text-xs font-bold text-slate-900 tracking-wide uppercase mb-1">
             Student Full Name <span className="text-red-600">*</span>
           </label>
@@ -137,6 +168,7 @@ export const DemographicsSection: React.FC<Props> = ({ data, onChange }) => {
             placeholder="e.g. Aarav Krishnan"
             className="w-full px-3 py-2 rounded border border-slate-300 focus:border-teal-700 focus:ring-1 focus:ring-teal-700 text-sm text-slate-900 bg-white"
           />
+          <p className="text-[11px] text-slate-700 mt-1">Full legal or clinical record name</p>
         </div>
 
         {/* =========================================================================

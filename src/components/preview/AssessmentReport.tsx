@@ -38,6 +38,14 @@ export const AssessmentReport: React.FC<AssessmentReportProps> = ({ data }) => {
             <div className="flex gap-4 items-start">
               {/* Left: Info items */}
               <div className="flex-1 space-y-2 text-[12.5px]">
+                {data.studentId && (
+                  <div className="flex items-start">
+                    <span className="w-44 shrink-0 font-semibold text-black">Reg. No. / Student ID</span>
+                    <span className="w-3 shrink-0 text-center">:</span>
+                    <span className="flex-1 font-bold text-teal-950 uppercase tracking-wider break-words">{data.studentId}</span>
+                  </div>
+                )}
+
                 <div className="flex items-start">
                   <span className="w-44 shrink-0 font-semibold text-black">Name</span>
                   <span className="w-3 shrink-0 text-center">:</span>

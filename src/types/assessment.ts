@@ -15,6 +15,7 @@ export interface SensoryModulationItem {
 
 export interface AssessmentData {
   // Page 1
+  studentId?: string;
   studentPhoto: string;
   name: string;
   ageSex: string;

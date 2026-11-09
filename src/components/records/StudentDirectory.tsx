@@ -49,12 +49,13 @@ export const StudentDirectory: React.FC<Props> = ({
   const [expandedStudents, setExpandedStudents] = useState<Record<string, boolean>>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Group assessments by student name (case-insensitive key)
+  // Group assessments by student ID (or student name as fallback)
   const studentGroups = useMemo(() => {
     const groups: Record<
       string,
       {
         studentKey: string;
+        studentId: string;
         studentName: string;
         studentPhoto: string;
         dob: string;
@@ -67,12 +68,14 @@ export const StudentDirectory: React.FC<Props> = ({
     > = {};
 
     assessments.forEach((item) => {
+      const studentId = (item.studentId || item.data?.studentId || '').trim();
       const rawName = (item.studentName || 'Unnamed Student').trim();
-      const normKey = rawName.toLowerCase();
+      const normKey = studentId ? `id_${studentId.toUpperCase()}` : `name_${rawName.toLowerCase()}`;
 
       if (!groups[normKey]) {
         groups[normKey] = {
           studentKey: normKey,
+          studentId: studentId,
           studentName: rawName,
           studentPhoto: item.studentPhoto || '',
           dob: item.dob || '',
@@ -84,7 +87,10 @@ export const StudentDirectory: React.FC<Props> = ({
         };
       }
 
-      // Update photo or details if earlier record had it missing
+      // Update studentId, photo or details if earlier record had it missing
+      if (!groups[normKey].studentId && studentId) {
+        groups[normKey].studentId = studentId;
+      }
       if (!groups[normKey].studentPhoto && item.studentPhoto) {
         groups[normKey].studentPhoto = item.studentPhoto;
       }
@@ -117,14 +123,16 @@ export const StudentDirectory: React.FC<Props> = ({
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
 
     let list = studentGroups.filter((st) => {
-      // Search matching across Name, Diagnosis, Parents, DOE, or ID
+      // Search matching across Student ID, Student Name, Diagnosis, Parents, DOE, or Consultant
       const matchesSearch =
         !query ||
+        (st.studentId && st.studentId.toLowerCase().includes(query)) ||
         st.studentName.toLowerCase().includes(query) ||
         st.diagnosis.toLowerCase().includes(query) ||
         st.parentsGuardians.toLowerCase().includes(query) ||
         st.assessments.some(
           (a) =>
+            (a.studentId && a.studentId.toLowerCase().includes(query)) ||
             (a.doe && a.doe.toLowerCase().includes(query)) ||
             (a.consultantName && a.consultantName.toLowerCase().includes(query))
         );
@@ -284,7 +292,7 @@ export const StudentDirectory: React.FC<Props> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by student name, diagnosis, parent/guardian, or date (e.g. 'Aarav', 'ASD', '2026-11')..."
+              placeholder="Search by Student ID (e.g. TH-2026-001), Student Name, Diagnosis, or Date..."
               className="w-full pl-9 pr-8 py-2.5 rounded border border-slate-300 focus:border-teal-700 focus:ring-1 focus:ring-teal-700 text-sm text-slate-900 placeholder:text-slate-400 bg-white"
             />
             {searchQuery && (
@@ -431,6 +439,11 @@ export const StudentDirectory: React.FC<Props> = ({
                         <h3 className="text-base font-bold text-slate-900 leading-tight">
                           {student.studentName}
                         </h3>
+                        {student.studentId && (
+                          <span className="text-xs font-mono font-bold text-teal-900 bg-teal-100 border border-teal-300 px-2 py-0.5 rounded tracking-wide">
+                            ID: {student.studentId}
+                          </span>
+                        )}
                         {student.ageSex && (
                           <span className="text-xs font-bold text-slate-700 bg-slate-200/80 px-2 py-0.5 rounded">
                             {student.ageSex}
@@ -485,6 +498,7 @@ export const StudentDirectory: React.FC<Props> = ({
                       onClick={(e) => {
                         e.stopPropagation();
                         onNewAssessmentForStudent({
+                          studentId: student.studentId,
                           name: student.studentName,
                           studentPhoto: student.studentPhoto,
                           dob: student.dob,

@@ -12,7 +12,11 @@ import { SensoryAutismSection } from './components/form/sections/SensoryAutismSe
 import { StandardTestsPlanSection } from './components/form/sections/StandardTestsPlanSection';
 import { CloudAssessmentsModal } from './components/common/CloudAssessmentsModal';
 import { StudentDirectory } from './components/records/StudentDirectory';
-import { listCloudAssessments, type CloudAssessmentSummary } from './services/firebase';
+import {
+  listCloudAssessments,
+  saveAssessmentToCloud,
+  type CloudAssessmentSummary,
+} from './services/firebase';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import {
@@ -32,7 +36,8 @@ import {
   Loader2,
   Cloud,
   Users,
-  Save
+  Save,
+  CheckCircle2,
 } from 'lucide-react';
 
 const SECTIONS = [
@@ -76,6 +81,11 @@ export function App() {
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [cloudAssessments, setCloudAssessments] = useState<CloudAssessmentSummary[]>([]);
   const [isLoadingAssessments, setIsLoadingAssessments] = useState(false);
+  const [isSavingCloud, setIsSavingCloud] = useState(false);
+  const [cloudSaveStatus, setCloudSaveStatus] = useState<{ isSynced: boolean; time: string }>({
+    isSynced: false,
+    time: '',
+  });
 
   // Load Cloud Assessments List from Firebase Firestore
   const loadCloudList = async () => {
@@ -94,7 +104,26 @@ export function App() {
     loadCloudList();
   }, []);
 
-  // Auto-save to localStorage
+  // Direct 1-Click Save to Firebase Firestore Cloud
+  const handleSaveToCloud = async () => {
+    setIsSavingCloud(true);
+    try {
+      const savedDocId = await saveAssessmentToCloud(data, activeDocId || undefined);
+      setActiveDocId(savedDocId);
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setCloudSaveStatus({ isSynced: true, time: timeStr });
+      await loadCloudList();
+      alert(`Assessment for "${data.name || 'Student'}" successfully saved to Cloud!\nDocument ID: ${savedDocId}`);
+    } catch (err: any) {
+      console.error('Save to cloud failed:', err);
+      alert(`Could not save to Cloud: ${err.message || 'Firebase error'}`);
+    } finally {
+      setIsSavingCloud(false);
+    }
+  };
+
+  // Auto-save to localStorage (Safe offline draft cache)
   useEffect(() => {
     try {
       localStorage.setItem('thulir_assessment_current', JSON.stringify(data));
@@ -107,6 +136,7 @@ export function App() {
 
   const updateData = (updates: Partial<AssessmentData>) => {
     setData((prev) => ({ ...prev, ...updates }));
+    setCloudSaveStatus((prev) => ({ ...prev, isSynced: false }));
   };
 
   // Direct High-Resolution PDF Download: exactly 8 pages matching the official protocol 1:1
@@ -171,6 +201,7 @@ export function App() {
       setData(emptyAssessment);
       setActiveStep(1);
       setActiveDocId(null);
+      setCloudSaveStatus({ isSynced: false, time: '' });
       try {
         localStorage.removeItem('thulir_assessment_current');
       } catch (e) {
@@ -276,8 +307,28 @@ export function App() {
             </button>
           </div>
 
-          {/* Action Buttons: Direct PDF Download & Print */}
+          {/* Action Buttons: Save to Cloud, Direct PDF Download & Print */}
           <div className="flex items-center gap-2">
+            {/* Direct Save to Cloud Button */}
+            <button
+              onClick={handleSaveToCloud}
+              disabled={isSavingCloud}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-teal-800 hover:bg-teal-900 disabled:bg-teal-600 text-white rounded text-xs sm:text-sm font-bold border border-teal-900 transition-none shadow-sm"
+              title="Save current assessment directly to Firebase Cloud"
+            >
+              {isSavingCloud ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 text-emerald-300" />
+                  <span>{activeDocId ? 'Update in Cloud' : 'Save to Cloud'}</span>
+                </>
+              )}
+            </button>
+
             {/* Direct PDF File Download Button */}
             <button
               onClick={handleDownloadDirectPdf}
@@ -301,7 +352,7 @@ export function App() {
             {/* Print to Paper / Browser Print */}
             <button
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-teal-800 hover:bg-teal-900 text-white rounded text-xs sm:text-sm font-bold border border-teal-900 transition-none"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded text-xs sm:text-sm font-bold border border-slate-900 transition-none"
               title="Print document to printer"
             >
               <Printer className="w-4 h-4" />
@@ -376,6 +427,18 @@ export function App() {
             <div className="flex flex-col gap-2 pb-2 border-b border-slate-200">
               <button
                 onClick={() => {
+                  handleSaveToCloud();
+                  setMobileMenuOpen(false);
+                }}
+                disabled={isSavingCloud}
+                className="px-3 py-2 text-xs font-bold text-white bg-teal-800 border border-teal-900 rounded w-full inline-flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                {isSavingCloud ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-emerald-300" />}
+                <span>{activeDocId ? 'Update in Cloud' : 'Save Assessment to Cloud'}</span>
+              </button>
+
+              <button
+                onClick={() => {
                   setViewMode('directory');
                   loadCloudList();
                   setMobileMenuOpen(false);
@@ -393,7 +456,7 @@ export function App() {
                 className="px-3 py-2 text-xs font-bold text-teal-900 bg-teal-50 border border-teal-300 rounded inline-flex items-center justify-center gap-1.5 w-full"
               >
                 <Cloud className="w-4 h-4 text-teal-700" />
-                <span>Save / Sync Cloud (Firebase)</span>
+                <span>Manage Cloud Backups</span>
                 {activeDocId && (
                   <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block"></span>
                 )}
@@ -430,7 +493,7 @@ export function App() {
               </button>
             </div>
             <div className="text-xs text-slate-700 flex items-center justify-between font-medium pt-1">
-              <span>Auto-saved to device</span>
+              <span>Auto-saved to device draft</span>
               <span className="font-bold text-slate-900">{lastSavedTime}</span>
             </div>
           </div>
@@ -441,10 +504,15 @@ export function App() {
           SUB-HEADER: STATUS & COMPLETION BAR (HIGH VISIBILITY)
          ======================================================== */}
       <div className="bg-slate-200 border-b border-slate-300 px-4 sm:px-6 py-2 no-print">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Active Child Summary */}
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-xs flex-wrap">
             <span className="font-bold text-slate-800">Active Student:</span>
+            {data.studentId && (
+              <span className="font-mono bg-teal-100 text-teal-950 border border-teal-300 px-1.5 py-0.5 rounded font-bold">
+                ID: {data.studentId}
+              </span>
+            )}
             <span className="font-bold text-teal-900 bg-white px-2 py-0.5 rounded border border-slate-300">
               {data.name || 'Untitled Assessment'}
             </span>
@@ -455,20 +523,45 @@ export function App() {
             <span className="text-slate-700 font-medium">Eval Date: {data.doe || 'Pending'}</span>
           </div>
 
-          {/* Progress Indicator */}
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-slate-700 flex items-center gap-1 font-medium">
-              <Save className="w-3.5 h-3.5 text-emerald-700" />
-              <span>Saved locally ({lastSavedTime})</span>
-            </div>
+          {/* Cloud Sync & Auto-save Status */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {cloudSaveStatus.isSynced ? (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-bold">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Synced to Cloud ({cloudSaveStatus.time})</span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2">
+                <span className="text-xs font-medium text-amber-950 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                  <span>Draft cached locally ({lastSavedTime})</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSaveToCloud}
+                  disabled={isSavingCloud}
+                  className="text-xs font-bold text-white bg-teal-800 hover:bg-teal-900 px-2.5 py-1 rounded transition-none shadow-xs flex items-center gap-1"
+                  title="Click to save and persist this assessment permanently to Firebase Cloud"
+                >
+                  {isSavingCloud ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Save className="w-3 h-3 text-emerald-300" />
+                  )}
+                  <span>Save to Cloud</span>
+                </button>
+              </div>
+            )}
 
-            <div className="w-28 sm:w-36 bg-slate-300 rounded h-2.5 overflow-hidden border border-slate-400">
-              <div
-                className="bg-teal-700 h-full transition-all"
-                style={{ width: `${completionPct}%` }}
-              />
+            <div className="flex items-center gap-2">
+              <div className="w-24 sm:w-32 bg-slate-300 rounded h-2.5 overflow-hidden border border-slate-400">
+                <div
+                  className="bg-teal-700 h-full transition-all"
+                  style={{ width: `${completionPct}%` }}
+                />
+              </div>
+              <span className="text-xs font-bold text-slate-900">{completionPct}%</span>
             </div>
-            <span className="text-xs font-bold text-slate-900">{completionPct}%</span>
           </div>
         </div>
       </div>
@@ -537,28 +630,45 @@ export function App() {
                     Section {activeStep} of 8 ({SECTIONS[activeStep - 1].page})
                   </div>
 
-                  {activeStep < 8 ? (
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => setActiveStep((prev) => Math.min(prev + 1, 8))}
-                      className="inline-flex items-center gap-1.5 px-5 py-2 rounded bg-teal-800 hover:bg-teal-900 text-white text-xs sm:text-sm font-bold border border-teal-900 transition-none"
+                      onClick={handleSaveToCloud}
+                      disabled={isSavingCloud}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-teal-800 hover:bg-teal-900 disabled:bg-teal-600 text-white text-xs sm:text-sm font-bold border border-teal-900 transition-none shadow-xs"
+                      title="Save current progress to Cloud database"
                     >
-                      Next Section
-                      <ChevronRight className="w-4 h-4" />
+                      {isSavingCloud ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Save className="w-4 h-4 text-emerald-300" />
+                      )}
+                      <span>{activeDocId ? 'Update Cloud Record' : 'Save to Cloud'}</span>
                     </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setViewMode('preview');
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className="inline-flex items-center gap-1.5 px-5 py-2 rounded bg-emerald-800 hover:bg-emerald-900 text-white text-xs sm:text-sm font-bold border border-emerald-900 transition-none"
-                    >
-                      Review 8-Page PDF
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  )}
+
+                    {activeStep < 8 ? (
+                      <button
+                        type="button"
+                        onClick={() => setActiveStep((prev) => Math.min(prev + 1, 8))}
+                        className="inline-flex items-center gap-1.5 px-5 py-2 rounded bg-teal-800 hover:bg-teal-900 text-white text-xs sm:text-sm font-bold border border-teal-900 transition-none"
+                      >
+                        Next Section
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setViewMode('preview');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="inline-flex items-center gap-1.5 px-5 py-2 rounded bg-emerald-800 hover:bg-emerald-900 text-white text-xs sm:text-sm font-bold border border-emerald-900 transition-none"
+                      >
+                        Review 8-Page PDF
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -691,6 +801,7 @@ export function App() {
             onSelectAssessment={(selData, docId, targetView) => {
               setData(selData);
               setActiveDocId(docId);
+              setCloudSaveStatus({ isSynced: true, time: 'Cloud Record' });
               setActiveStep(1);
               setViewMode(targetView);
               window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -698,6 +809,7 @@ export function App() {
             onNewAssessmentForStudent={(studentDemo) => {
               const followUpData: AssessmentData = {
                 ...emptyAssessment,
+                studentId: studentDemo.studentId || '',
                 name: studentDemo.name || '',
                 studentPhoto: studentDemo.studentPhoto || '',
                 dob: studentDemo.dob || '',
@@ -709,6 +821,7 @@ export function App() {
               };
               setData(followUpData);
               setActiveDocId(null); // Fresh document in cloud, so it won't overwrite past assessments!
+              setCloudSaveStatus({ isSynced: false, time: '' });
               setActiveStep(1);
               setViewMode('editor');
               window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -716,6 +829,7 @@ export function App() {
             onStartBlankAssessment={() => {
               setData(emptyAssessment);
               setActiveDocId(null);
+              setCloudSaveStatus({ isSynced: false, time: '' });
               setActiveStep(1);
               setViewMode('editor');
               window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -751,6 +865,7 @@ export function App() {
           setData(loadedData);
           setActiveStep(1);
           setActiveDocId(cloudId);
+          setCloudSaveStatus({ isSynced: true, time: 'Cloud Record' });
         }}
         activeDocId={activeDocId}
         onDocIdChange={setActiveDocId}

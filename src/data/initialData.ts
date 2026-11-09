@@ -26,6 +26,7 @@ export const initialSensoryModulation = [
 
 export const emptyAssessment: AssessmentData = {
   // Page 1
+  studentId: '',
   studentPhoto: '',
   name: '',
   ageSex: '',
