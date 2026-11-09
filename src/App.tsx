@@ -74,6 +74,7 @@ export function App() {
   const [activeStep, setActiveStep] = useState(1);
   const [viewMode, setViewMode] = useState<'editor' | 'preview' | 'split' | 'directory'>('editor');
   const [zoomScale, setZoomScale] = useState(1);
+  const [splitZoom, setSplitZoom] = useState(0.66);
   const [lastSavedTime, setLastSavedTime] = useState<string>('Just now');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -675,20 +676,51 @@ export function App() {
 
             {/* Split Screen Live Report Preview */}
             {viewMode === 'split' && (
-              <div className="hidden lg:block lg:col-span-6 sticky top-20 h-[calc(100vh-6rem)] overflow-y-auto pr-2">
+              <div className="hidden lg:block lg:col-span-6 sticky top-20 h-[calc(100vh-6rem)] split-screen-preview-container overflow-y-auto overflow-x-hidden pr-1">
                 <div className="bg-slate-900 text-white rounded p-3 mb-4 flex items-center justify-between border border-slate-700">
                   <div className="flex items-center gap-2 text-xs font-bold">
                     <Eye className="w-4 h-4 text-teal-400" />
-                    Live 8-Page Assessment Preview (Times New Roman)
+                    <span className="hidden xl:inline">Live 8-Page Preview</span>
                   </div>
                   <div className="flex items-center gap-2">
+                    {/* Manual Zoom Controls */}
+                    <div className="flex items-center gap-1 bg-slate-800 rounded p-1 border border-slate-700">
+                      <button
+                        type="button"
+                        onClick={() => setSplitZoom((prev) => Math.max(prev - 0.05, 0.45))}
+                        className="p-1 hover:bg-slate-700 rounded text-slate-300 hover:text-white"
+                        title="Zoom out"
+                      >
+                        <ZoomOut className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="text-[11px] font-mono font-bold px-1 text-slate-200">
+                        {Math.round(splitZoom * 100)}%
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSplitZoom((prev) => Math.min(prev + 0.05, 1.2))}
+                        className="p-1 hover:bg-slate-700 rounded text-slate-300 hover:text-white"
+                        title="Zoom in"
+                      >
+                        <ZoomIn className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSplitZoom(0.66)}
+                        className="px-1.5 py-0.5 text-[10px] font-bold hover:bg-slate-700 rounded text-teal-300"
+                        title="Fit full page width without scrolling"
+                      >
+                        Fit
+                      </button>
+                    </div>
+
                     <button
                       onClick={handleDownloadDirectPdf}
                       disabled={isGeneratingPdf}
                       className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded border border-emerald-800 transition-none"
                     >
                       <FileDown className="w-3.5 h-3.5" />
-                      Download PDF
+                      PDF
                     </button>
                     <button
                       onClick={handlePrint}
@@ -699,7 +731,12 @@ export function App() {
                     </button>
                   </div>
                 </div>
-                <div className="screen-preview-container transform origin-top scale-[0.72]">
+                <div
+                  className="screen-preview-container overflow-x-hidden origin-top"
+                  style={{
+                    zoom: splitZoom,
+                  }}
+                >
                   <AssessmentReport data={data} />
                 </div>
               </div>

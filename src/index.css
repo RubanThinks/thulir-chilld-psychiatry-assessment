@@ -43,6 +43,29 @@
   border: 1px solid #cbd5e1;
 }
 
+/* Split screen preview container: strictly prevent any horizontal scrollbar */
+.split-screen-preview-container {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  width: 100% !important;
+}
+
+.split-screen-preview-container::-webkit-scrollbar:horizontal {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+.split-screen-preview-container .screen-preview-container {
+  overflow-x: hidden !important;
+  width: 100% !important;
+}
+
+.split-screen-preview-container .a4-page {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
 /* Page break strictly on pages 1 to 7 */
 .page-break {
   page-break-after: always !important;
