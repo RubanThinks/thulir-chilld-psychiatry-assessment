@@ -1,0 +1,19 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Thulir Special School & Therapy Centre
+    // Allows therapists & staff to read and write assessments and universal student profiles
+    match /assessments/{assessmentId} {
+      allow read, write: if true;
+    }
+
+    match /students/{studentId} {
+      allow read, write: if true;
+    }
+
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
