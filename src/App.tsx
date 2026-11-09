@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { AssessmentData } from './types/assessment';
 import { emptyAssessment } from './data/initialData';
 import { AssessmentReport } from './components/preview/AssessmentReport';
@@ -16,7 +16,10 @@ import {
   listCloudAssessments,
   saveAssessmentToCloud,
   deleteAssessmentFromCloud,
+  getNextSequentialStudentId,
+  extractRegisteredStudents,
   type CloudAssessmentSummary,
+  type RegisteredStudent,
 } from './services/firebase';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -85,10 +88,16 @@ export function App() {
   const [cloudAssessments, setCloudAssessments] = useState<CloudAssessmentSummary[]>([]);
   const [isLoadingAssessments, setIsLoadingAssessments] = useState(false);
   const [isSavingCloud, setIsSavingCloud] = useState(false);
+  const [nextSequentialId, setNextSequentialId] = useState<string>('TH-100');
   const [cloudSaveStatus, setCloudSaveStatus] = useState<{ isSynced: boolean; time: string }>({
     isSynced: false,
     time: '',
   });
+
+  // Extract unique registered student directory for universal ID mapping & demographic auto-fill
+  const registeredStudents: RegisteredStudent[] = useMemo(() => {
+    return extractRegisteredStudents(cloudAssessments);
+  }, [cloudAssessments]);
 
   // Load Cloud Assessments List from Firebase Firestore
   const loadCloudList = async () => {
@@ -106,6 +115,17 @@ export function App() {
   useEffect(() => {
     loadCloudList();
   }, []);
+
+  // Compute next sequential unique Universal Student ID (starting from TH-100)
+  useEffect(() => {
+    getNextSequentialStudentId(cloudAssessments).then((seqId) => {
+      setNextSequentialId(seqId);
+      // Auto-assign to current assessment if studentId is not set and starting a fresh assessment
+      if (!data.studentId && !activeDocId) {
+        setData((prev) => (prev.studentId ? prev : { ...prev, studentId: seqId }));
+      }
+    });
+  }, [cloudAssessments, activeDocId]);
 
   // Direct 1-Click Save to Firebase Firestore Cloud
   const handleSaveToCloud = async () => {
@@ -199,9 +219,10 @@ export function App() {
     window.print();
   };
 
-  const handleResetForm = () => {
+  const handleResetForm = async () => {
     if (confirm('Start a new blank child assessment? Any unsaved changes in current form will be cleared.')) {
-      setData(emptyAssessment);
+      const nextId = await getNextSequentialStudentId(cloudAssessments);
+      setData({ ...emptyAssessment, studentId: nextId });
       setActiveStep(1);
       setActiveDocId(null);
       setCloudSaveStatus({ isSynced: false, time: '' });
@@ -659,7 +680,14 @@ export function App() {
 
               {/* Form Content Card */}
               <div className="bg-white rounded border-2 border-slate-300 p-5 sm:p-8">
-                {activeStep === 1 && <DemographicsSection data={data} onChange={updateData} />}
+                {activeStep === 1 && (
+                  <DemographicsSection
+                    data={data}
+                    onChange={updateData}
+                    registeredStudents={registeredStudents}
+                    nextSequentialId={nextSequentialId}
+                  />
+                )}
                 {activeStep === 2 && <MedicalFamilySection data={data} onChange={updateData} />}
                 {activeStep === 3 && <MotorSkillsSection data={data} onChange={updateData} />}
                 {activeStep === 4 && <HandwritingCognitiveSection data={data} onChange={updateData} />}
@@ -916,8 +944,9 @@ export function App() {
               setViewMode('editor');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            onStartBlankAssessment={() => {
-              setData(emptyAssessment);
+            onStartBlankAssessment={async () => {
+              const nextId = await getNextSequentialStudentId(cloudAssessments);
+              setData({ ...emptyAssessment, studentId: nextId });
               setActiveDocId(null);
               setCloudSaveStatus({ isSynced: false, time: '' });
               setActiveStep(1);

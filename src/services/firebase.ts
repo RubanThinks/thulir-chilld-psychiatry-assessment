@@ -88,6 +88,38 @@ export async function saveAssessmentToCloud(data: AssessmentData, existingId?: s
     { merge: true }
   );
 
+  // Maintain universal student profile document in 'students' collection for portal-wide integration
+  if (data.studentId && data.studentId.trim()) {
+    try {
+      const cleanStudentKey = data.studentId.trim().toUpperCase().replace(/[^a-zA-Z0-9_-]/g, '_');
+      const studentDocRef = doc(db, 'students', cleanStudentKey);
+      await setDoc(
+        studentDocRef,
+        {
+          studentId: data.studentId.trim().toUpperCase(),
+          name: data.name || '',
+          studentPhoto: data.studentPhoto || '',
+          dob: data.dob || '',
+          ageYears: data.ageYears || '',
+          ageMonths: data.ageMonths || '',
+          sex: data.sex || '',
+          ageSex: data.ageSex || '',
+          parentsGuardians: data.parentsGuardians || '',
+          address: data.address || '',
+          diagnosis: data.diagnosis || '',
+          reference: data.reference || '',
+          chiefComplaints: data.chiefComplaints || '',
+          birthHistory: data.birthHistory || {},
+          lastAssessmentDate: data.doe || '',
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+    } catch (e) {
+      console.warn('Could not sync universal student record to students collection:', e);
+    }
+  }
+
   return docId;
 }
 
@@ -157,4 +189,167 @@ export async function loadAssessmentFromCloud(id: string): Promise<AssessmentDat
 export async function deleteAssessmentFromCloud(id: string): Promise<void> {
   const docRef = doc(db, 'assessments', id);
   await deleteDoc(docRef);
+}
+
+/**
+ * Universal Registered Student interface for cross-assessment student tracking
+ */
+export interface RegisteredStudent {
+  studentId: string;
+  name: string;
+  studentPhoto?: string;
+  dob?: string;
+  ageYears?: string;
+  ageMonths?: string;
+  sex?: string;
+  ageSex?: string;
+  parentsGuardians?: string;
+  address?: string;
+  diagnosis?: string;
+  reference?: string;
+  chiefComplaints?: string;
+  birthHistory?: {
+    prenatal: string;
+    perinatal: string;
+    postnatal: string;
+  };
+  assessmentCount: number;
+  lastDoe?: string;
+}
+
+/**
+ * Parse any numeric sequential identifier from strings like 'TH-100', '101', 'TH-0102', 'THULIR-105'
+ */
+export function parseNumericStudentId(id: string): number | null {
+  if (!id) return null;
+  const match = id.match(/(?:TH-?|THULIR-?|ID-?)?0*(\d+)/i);
+  if (match && match[1]) {
+    const num = parseInt(match[1], 10);
+    return isNaN(num) ? null : num;
+  }
+  return null;
+}
+
+/**
+ * Calculate the next sequential unique Universal Student ID starting from 100.
+ * Automatically checks existing cloud records to ensure strict uniqueness without collisions.
+ */
+export async function getNextSequentialStudentId(
+  cachedSummaries?: CloudAssessmentSummary[]
+): Promise<string> {
+  const usedNumbers = new Set<number>();
+
+  const processId = (idStr?: string) => {
+    if (!idStr) return;
+    const num = parseNumericStudentId(idStr);
+    if (num !== null && num >= 100) {
+      usedNumbers.add(num);
+    }
+  };
+
+  if (cachedSummaries && cachedSummaries.length > 0) {
+    cachedSummaries.forEach((s) => {
+      processId(s.studentId);
+      processId(s.data?.studentId);
+    });
+  } else {
+    try {
+      const snap = await getDocs(collection(db, 'assessments'));
+      snap.forEach((d) => {
+        const item = d.data();
+        processId(item.studentId);
+        processId(item.data?.studentId);
+      });
+    } catch (e) {
+      console.warn('Could not query Firestore collection for student IDs:', e);
+    }
+  }
+
+  // Find lowest available sequential number starting at 100
+  let nextSeq = 100;
+  while (usedNumbers.has(nextSeq)) {
+    nextSeq++;
+  }
+
+  return `TH-${nextSeq}`;
+}
+
+/**
+ * Extract distinct registered student profiles from cloud summaries
+ */
+export function extractRegisteredStudents(assessments: CloudAssessmentSummary[]): RegisteredStudent[] {
+  const map = new Map<string, RegisteredStudent>();
+
+  assessments.forEach((item) => {
+    const rawId = (item.studentId || item.data?.studentId || '').trim().toUpperCase();
+    const rawName = (item.studentName || item.data?.name || '').trim();
+    if (!rawId && !rawName) return;
+
+    // Index primarily by Student ID if present, otherwise normalized name
+    const key = rawId ? `ID_${rawId}` : `NAME_${rawName.toLowerCase()}`;
+    const d = item.data;
+
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, {
+        studentId: rawId,
+        name: rawName,
+        studentPhoto: item.studentPhoto || d?.studentPhoto || '',
+        dob: item.dob || d?.dob || '',
+        ageYears: d?.ageYears || '',
+        ageMonths: d?.ageMonths || '',
+        sex: d?.sex || '',
+        ageSex: item.ageSex || d?.ageSex || '',
+        parentsGuardians: item.parentsGuardians || d?.parentsGuardians || '',
+        address: d?.address || '',
+        diagnosis: item.diagnosis || d?.diagnosis || '',
+        reference: d?.reference || '',
+        chiefComplaints: d?.chiefComplaints || '',
+        birthHistory: d?.birthHistory,
+        assessmentCount: 1,
+        lastDoe: item.doe || d?.doe || '',
+      });
+    } else {
+      existing.assessmentCount += 1;
+      if (!existing.studentId && rawId) existing.studentId = rawId;
+      if (!existing.studentPhoto && (item.studentPhoto || d?.studentPhoto)) {
+        existing.studentPhoto = item.studentPhoto || d?.studentPhoto;
+      }
+      if (!existing.dob && (item.dob || d?.dob)) existing.dob = item.dob || d?.dob;
+      if (!existing.ageSex && (item.ageSex || d?.ageSex)) existing.ageSex = item.ageSex || d?.ageSex;
+      if (!existing.parentsGuardians && (item.parentsGuardians || d?.parentsGuardians)) {
+        existing.parentsGuardians = item.parentsGuardians || d?.parentsGuardians;
+      }
+      if (!existing.address && d?.address) existing.address = d.address;
+      if (!existing.diagnosis && (item.diagnosis || d?.diagnosis)) {
+        existing.diagnosis = item.diagnosis || d?.diagnosis;
+      }
+      if (!existing.reference && d?.reference) existing.reference = d.reference;
+      if (!existing.birthHistory && d?.birthHistory) existing.birthHistory = d.birthHistory;
+    }
+  });
+
+  return Array.from(map.values()).sort((a, b) => {
+    const numA = parseNumericStudentId(a.studentId) || 0;
+    const numB = parseNumericStudentId(b.studentId) || 0;
+    if (numA && numB) return numA - numB;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+/**
+ * Search student profile from Firestore by exact Student ID
+ */
+export async function getStudentProfileFromCloud(studentId: string): Promise<Partial<AssessmentData> | null> {
+  const cleanKey = studentId.trim().toUpperCase().replace(/[^a-zA-Z0-9_-]/g, '_');
+  try {
+    const studentRef = doc(db, 'students', cleanKey);
+    const snap = await getDoc(studentRef);
+    if (snap.exists()) {
+      return snap.data() as Partial<AssessmentData>;
+    }
+  } catch (e) {
+    // ignore
+  }
+  return null;
 }

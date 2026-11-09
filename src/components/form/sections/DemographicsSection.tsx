@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { AssessmentData } from '../../../types/assessment';
+import type { RegisteredStudent } from '../../../services/firebase';
 import { WordLimitTextarea } from '../WordLimitTextarea';
 import { PhotoUploader } from '../PhotoUploader';
 import { WORD_LIMITS } from '../../../utils/wordLimits';
@@ -11,20 +12,109 @@ import {
   Stethoscope,
   Calculator,
   Edit3,
-  Sparkles
+  Users,
+  CheckCircle2,
+  UserPlus
 } from 'lucide-react';
 
 interface Props {
   data: AssessmentData;
   onChange: (updates: Partial<AssessmentData>) => void;
+  registeredStudents?: RegisteredStudent[];
+  nextSequentialId?: string;
 }
 
 const YEAR_OPTIONS = Array.from({ length: 26 }, (_, i) => i.toString()); // 0 to 25
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => i.toString()); // 0 to 11
 const SEX_OPTIONS = ['Male', 'Female', 'Other'] as const;
 
-export const DemographicsSection: React.FC<Props> = ({ data, onChange }) => {
+export const DemographicsSection: React.FC<Props> = ({
+  data,
+  onChange,
+  registeredStudents = [],
+  nextSequentialId = 'TH-100',
+}) => {
   const [manualOverride, setManualOverride] = useState(false);
+
+  // Check if current ID matches an existing student profile
+  const matchedExistingStudent = useMemo(() => {
+    if (!data.studentId || !registeredStudents.length) return null;
+    const cleanCurrent = data.studentId.trim().toUpperCase();
+    return (
+      registeredStudents.find(
+        (s) => s.studentId && s.studentId.toUpperCase() === cleanCurrent
+      ) || null
+    );
+  }, [data.studentId, registeredStudents]);
+
+  // Auto-populate demographics when selecting or typing an existing student ID
+  const applyStudentProfile = (student: RegisteredStudent) => {
+    onChange({
+      studentId: student.studentId,
+      name: student.name || data.name,
+      studentPhoto: student.studentPhoto !== undefined ? student.studentPhoto : data.studentPhoto,
+      dob: student.dob || data.dob,
+      ageYears: student.ageYears || data.ageYears,
+      ageMonths: student.ageMonths || data.ageMonths,
+      sex: student.sex || data.sex,
+      ageSex: student.ageSex || data.ageSex,
+      parentsGuardians: student.parentsGuardians || data.parentsGuardians,
+      address: student.address || data.address,
+      diagnosis: student.diagnosis || data.diagnosis,
+      reference: student.reference || data.reference,
+      chiefComplaints: student.chiefComplaints || data.chiefComplaints,
+      birthHistory: student.birthHistory || data.birthHistory,
+    });
+  };
+
+  const handleStudentIdChange = (inputVal: string) => {
+    const rawVal = inputVal.trim();
+    let formattedId = rawVal.toUpperCase();
+    if (/^\d+$/.test(rawVal)) {
+      formattedId = `TH-${rawVal}`;
+    }
+
+    // Check if entered ID matches any existing student
+    const matched = registeredStudents.find(
+      (s) =>
+        s.studentId.toUpperCase() === formattedId ||
+        s.studentId.toUpperCase() === rawVal.toUpperCase()
+    );
+
+    if (matched) {
+      applyStudentProfile(matched);
+    } else {
+      onChange({ studentId: formattedId });
+    }
+  };
+
+  const handleNameChange = (newName: string) => {
+    const updates: Partial<AssessmentData> = { name: newName };
+    // If student ID is currently missing, automatically assign next sequential ID!
+    if (!data.studentId && nextSequentialId) {
+      updates.studentId = nextSequentialId;
+    }
+    onChange(updates);
+  };
+
+  const handleSwitchToNewStudent = () => {
+    onChange({
+      studentId: nextSequentialId || 'TH-100',
+      name: '',
+      studentPhoto: '',
+      dob: '',
+      ageYears: '',
+      ageMonths: '',
+      sex: '',
+      ageSex: '',
+      parentsGuardians: '',
+      address: '',
+      diagnosis: '',
+      reference: '',
+      chiefComplaints: '',
+      birthHistory: { prenatal: '', perinatal: '', postnatal: '' },
+    });
+  };
 
   // Parse existing ageSex string if structured fields are empty
   const parsedValues = useMemo(() => {
@@ -124,36 +214,116 @@ export const DemographicsSection: React.FC<Props> = ({ data, onChange }) => {
         onChange={(url) => onChange({ studentPhoto: url })}
       />
 
+      {/* Universal Student Profile System Banner & Quick Selector */}
+      <div className="bg-slate-50 border-2 border-slate-300 rounded-lg p-3.5 space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 bg-teal-800 text-white rounded">
+              <Users className="w-4 h-4" />
+            </span>
+            <div>
+              <div className="text-xs font-bold text-slate-900 uppercase tracking-wide">
+                Universal Student Profile &amp; ID Registry
+              </div>
+              <div className="text-[11px] text-slate-600 font-medium">
+                Auto-assigned sequential IDs &bull; Demographics auto-fill for repeat evaluations
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions: Select Registered Student or Start New Sequential Student */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {registeredStudents && registeredStudents.length > 0 && (
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] font-bold text-slate-700">Enrolled:</span>
+                <select
+                  value={matchedExistingStudent ? matchedExistingStudent.studentId : ''}
+                  onChange={(e) => {
+                    const sel = registeredStudents.find((s) => s.studentId === e.target.value);
+                    if (sel) applyStudentProfile(sel);
+                  }}
+                  className="px-2.5 py-1 text-xs rounded border border-slate-300 bg-white font-medium text-slate-900 focus:border-teal-700"
+                >
+                  <option value="">-- Choose Registered Student --</option>
+                  {registeredStudents.map((st) => (
+                    <option key={st.studentId} value={st.studentId}>
+                      {st.studentId} - {st.name} ({st.assessmentCount} record{st.assessmentCount === 1 ? '' : 's'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleSwitchToNewStudent}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-teal-900 bg-teal-100 hover:bg-teal-200 border border-teal-300 rounded transition-none shadow-2xs"
+              title="Start a new student with next unique sequential ID"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>+ New Student ({nextSequentialId || 'TH-100'})</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Dynamic Context Feedback */}
+        {matchedExistingStudent ? (
+          <div className="bg-emerald-50 border border-emerald-300 rounded p-2.5 flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2 text-emerald-950 font-semibold">
+              <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+              <span>
+                Existing Profile Loaded: <strong>{matchedExistingStudent.name}</strong> (ID: {matchedExistingStudent.studentId}). Demographics auto-populated from database.
+              </span>
+            </div>
+            <span className="text-[11px] bg-emerald-200 text-emerald-950 font-bold px-2 py-0.5 rounded shrink-0">
+              {matchedExistingStudent.assessmentCount} Previous Eval{matchedExistingStudent.assessmentCount === 1 ? '' : 's'}
+            </span>
+          </div>
+        ) : (
+          <div className="bg-teal-50/60 border border-teal-200 rounded p-2 flex items-center justify-between text-xs text-teal-950">
+            <span>
+              New Student Assessment &bull; Universal ID <strong>{data.studentId || nextSequentialId || 'TH-100'}</strong> is automatically assigned and strictly unique.
+            </span>
+          </div>
+        )}
+      </div>
+
       {/* Primary Details Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Student ID / Reg. No. */}
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="block text-xs font-bold text-slate-900 tracking-wide uppercase">
-              Student ID / Reg. No.
+              Student ID / Reg. No. <span className="text-teal-800 font-normal normal-case">(Sequential &amp; Unique)</span>
             </label>
-            <button
-              type="button"
-              onClick={() => {
-                const year = new Date().getFullYear();
-                const rand = Math.floor(1000 + Math.random() * 9000);
-                onChange({ studentId: `TH-${year}-${rand}` });
-              }}
-              className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-800 hover:text-teal-950 bg-teal-50 hover:bg-teal-100 border border-teal-300 px-2 py-0.5 rounded transition-none"
-              title="Auto-generate a clinic registration ID"
-            >
-              <Sparkles className="w-3 h-3 text-teal-700" />
-              Auto-generate
-            </button>
+            {matchedExistingStudent ? (
+              <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded border border-emerald-300">
+                Linked Profile
+              </span>
+            ) : (
+              <span className="text-[11px] font-bold text-teal-800 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">
+                Auto-assigned
+              </span>
+            )}
           </div>
           <input
             type="text"
+            list="registered-students-datalist"
             value={data.studentId || ''}
-            onChange={(e) => onChange({ studentId: e.target.value.toUpperCase() })}
-            placeholder="e.g. TH-2026-0042"
+            onChange={(e) => handleStudentIdChange(e.target.value)}
+            placeholder={`e.g. ${nextSequentialId || 'TH-100'}`}
             className="w-full px-3 py-2 rounded border border-slate-300 focus:border-teal-700 focus:ring-1 focus:ring-teal-700 text-sm text-slate-900 font-mono bg-white uppercase font-bold tracking-wide"
           />
-          <p className="text-[11px] text-slate-700 mt-1">Unique registration code for tracking across all assessments</p>
+          <datalist id="registered-students-datalist">
+            {registeredStudents.map((st) => (
+              <option key={st.studentId} value={st.studentId}>
+                {st.studentId} - {st.name} ({st.diagnosis || 'Registered Student'})
+              </option>
+            ))}
+          </datalist>
+          <p className="text-[11px] text-slate-600 mt-1">
+            Permanent Universal Student ID. Enter or select an existing ID (e.g. 100 or TH-100) to auto-fill demographics.
+          </p>
         </div>
 
         {/* Student Full Name */}
@@ -164,11 +334,13 @@ export const DemographicsSection: React.FC<Props> = ({ data, onChange }) => {
           <input
             type="text"
             value={data.name}
-            onChange={(e) => onChange({ name: e.target.value })}
+            onChange={(e) => handleNameChange(e.target.value)}
             placeholder="e.g. Aarav Krishnan"
-            className="w-full px-3 py-2 rounded border border-slate-300 focus:border-teal-700 focus:ring-1 focus:ring-teal-700 text-sm text-slate-900 bg-white"
+            className="w-full px-3 py-2 rounded border border-slate-300 focus:border-teal-700 focus:ring-1 focus:ring-teal-700 text-sm text-slate-900 bg-white font-medium"
           />
-          <p className="text-[11px] text-slate-700 mt-1">Full legal or clinical record name</p>
+          <p className="text-[11px] text-slate-600 mt-1">
+            Full clinical name (typing here automatically confirms and assigns the unique Student ID)
+          </p>
         </div>
 
         {/* =========================================================================
