@@ -10,7 +10,6 @@ import { NumbersSocialSection } from './components/form/sections/NumbersSocialSe
 import { LanguageSelfCareSection } from './components/form/sections/LanguageSelfCareSection';
 import { SensoryAutismSection } from './components/form/sections/SensoryAutismSection';
 import { StandardTestsPlanSection } from './components/form/sections/StandardTestsPlanSection';
-import { CloudAssessmentsModal } from './components/common/CloudAssessmentsModal';
 import { StudentDirectory } from './components/records/StudentDirectory';
 import {
   listCloudAssessments,
@@ -38,7 +37,6 @@ import {
   Menu,
   X,
   Loader2,
-  Cloud,
   Users,
   Save,
   CheckCircle2,
@@ -83,7 +81,6 @@ export function App() {
   const [lastSavedTime, setLastSavedTime] = useState<string>('Just now');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [cloudAssessments, setCloudAssessments] = useState<CloudAssessmentSummary[]>([]);
   const [isLoadingAssessments, setIsLoadingAssessments] = useState(false);
@@ -450,20 +447,8 @@ export function App() {
             {/* Desktop Quick Tools */}
             <div className="hidden lg:flex items-center gap-2 border-l-2 border-slate-300 pl-3">
               <button
-                onClick={() => setIsCloudModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-bold text-teal-950 bg-teal-50 hover:bg-teal-100 border border-teal-300 rounded transition-none shadow-xs"
-                title="Firebase Cloud Assessments (Save / Load / Manage)"
-              >
-                <Cloud className="w-4 h-4 text-teal-700" />
-                <span>Cloud Records</span>
-                {activeDocId && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block" title="Synced to Firebase Cloud"></span>
-                )}
-              </button>
-
-              <button
                 onClick={handleResetForm}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-bold text-slate-700 hover:text-red-700 hover:bg-slate-200 border border-slate-300 rounded transition-none"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-bold text-slate-700 hover:text-teal-900 hover:bg-slate-200 border border-slate-300 rounded transition-none"
                 title="Start a new blank child assessment"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -509,20 +494,7 @@ export function App() {
                 className="px-3 py-2 text-xs font-bold text-slate-900 bg-slate-100 border border-slate-300 rounded w-full inline-flex items-center justify-center gap-1.5"
               >
                 <Users className="w-4 h-4 text-teal-800" />
-                <span>Student Directory ({cloudAssessments.length})</span>
-              </button>
-              <button
-                onClick={() => {
-                  setIsCloudModalOpen(true);
-                  setMobileMenuOpen(false);
-                }}
-                className="px-3 py-2 text-xs font-bold text-teal-900 bg-teal-50 border border-teal-300 rounded inline-flex items-center justify-center gap-1.5 w-full"
-              >
-                <Cloud className="w-4 h-4 text-teal-700" />
-                <span>Manage Cloud Backups</span>
-                {activeDocId && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block"></span>
-                )}
+                <span>Student Records Directory ({cloudAssessments.length})</span>
               </button>
               <button
                 onClick={() => {
@@ -986,22 +958,6 @@ export function App() {
           <AssessmentReport data={data} />
         </div>
       )}
-
-      {/* Firebase Cloud Assessments Modal */}
-      <CloudAssessmentsModal
-        isOpen={isCloudModalOpen}
-        onClose={() => setIsCloudModalOpen(false)}
-        currentData={data}
-        onLoadAssessment={(loadedData, cloudId) => {
-          setData(loadedData);
-          setActiveStep(1);
-          setActiveDocId(cloudId);
-          setCloudSaveStatus({ isSynced: true, time: 'Cloud Record' });
-        }}
-        activeDocId={activeDocId}
-        onDocIdChange={setActiveDocId}
-        onSaved={loadCloudList}
-      />
     </div>
   );
 }
