@@ -697,7 +697,7 @@ export function App() {
                 {activeStep === 8 && <StandardTestsPlanSection data={data} onChange={updateData} />}
 
                 {/* Step Navigation Bar */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 mt-8 border-t-2 border-slate-200">
+                <div className="flex items-center justify-between gap-2 pt-6 mt-8 border-t-2 border-slate-200">
                   {/* Previous Section Button */}
                   <button
                     type="button"
@@ -706,26 +706,25 @@ export function App() {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     disabled={activeStep === 1}
-                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded border-2 border-slate-400 text-xs sm:text-sm font-bold text-slate-900 bg-white hover:bg-slate-100 disabled:opacity-30 disabled:pointer-events-none transition-none shadow-2xs w-full sm:w-auto justify-center shrink-0"
+                    className="inline-flex items-center gap-1 px-3 py-2 rounded border-2 border-slate-400 text-xs sm:text-sm font-bold text-slate-900 bg-white hover:bg-slate-100 disabled:opacity-30 disabled:pointer-events-none transition-none shadow-2xs shrink-0"
+                    title="Go to previous section"
                   >
                     <ChevronLeft className="w-4 h-4" />
-                    Previous Section
+                    <span>Previous</span>
                   </button>
 
-                  {/* Section Indicator Badge (Never wraps, cleanly spaced) */}
-                  <div className="shrink-0 px-4 py-1.5 rounded-full bg-slate-100 border border-slate-300 text-xs font-bold text-slate-800 whitespace-nowrap shadow-2xs">
+                  {/* Section Indicator Badge (Compact & Centered) */}
+                  <div className="shrink-0 px-3 py-1 rounded-full bg-slate-100 border border-slate-300 text-xs font-bold text-slate-800 whitespace-nowrap shadow-2xs">
                     <span className="text-teal-800">Section {activeStep} of 8</span>
-                    <span className="mx-1.5 text-slate-400">&bull;</span>
-                    <span className="text-slate-700">{SECTIONS[activeStep - 1].page} ({SECTIONS[activeStep - 1].short})</span>
                   </div>
 
                   {/* Right Actions: Save to Cloud & Next Section */}
-                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={handleSaveToCloud}
                       disabled={isSavingCloud}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded bg-teal-800 hover:bg-teal-900 disabled:bg-teal-600 text-white text-xs sm:text-sm font-bold border border-teal-900 transition-none shadow-xs whitespace-nowrap"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded bg-teal-800 hover:bg-teal-900 disabled:bg-teal-600 text-white text-xs sm:text-sm font-bold border border-teal-900 transition-none shadow-xs whitespace-nowrap"
                       title="Save current progress to Cloud database"
                     >
                       {isSavingCloud ? (
@@ -743,9 +742,10 @@ export function App() {
                           setActiveStep((prev) => Math.min(prev + 1, 8));
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
-                        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded bg-teal-800 hover:bg-teal-900 text-white text-xs sm:text-sm font-bold border border-teal-900 transition-none shadow-xs whitespace-nowrap"
+                        className="inline-flex items-center gap-1 px-3.5 py-2 rounded bg-teal-800 hover:bg-teal-900 text-white text-xs sm:text-sm font-bold border border-teal-900 transition-none shadow-xs whitespace-nowrap"
+                        title="Go to next section"
                       >
-                        Next Section
+                        <span>Next</span>
                         <ChevronRight className="w-4 h-4" />
                       </button>
                     ) : (
@@ -755,9 +755,10 @@ export function App() {
                           setViewMode('preview');
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
-                        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded bg-emerald-800 hover:bg-emerald-900 text-white text-xs sm:text-sm font-bold border border-emerald-900 transition-none shadow-xs whitespace-nowrap"
+                        className="inline-flex items-center gap-1 px-3.5 py-2 rounded bg-emerald-800 hover:bg-emerald-900 text-white text-xs sm:text-sm font-bold border border-emerald-900 transition-none shadow-xs whitespace-nowrap"
+                        title="Review complete 8-page PDF document"
                       >
-                        Review 8-Page PDF
+                        <span>Review PDF</span>
                         <Eye className="w-4 h-4" />
                       </button>
                     )}
