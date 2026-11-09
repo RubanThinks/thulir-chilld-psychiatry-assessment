@@ -156,22 +156,35 @@ export function App() {
     setIsSavingCloud(true);
     try {
       const savedDocId = await saveAssessmentToCloud(payload, activeDocId || undefined);
-      setActiveDocId(savedDocId);
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      setCloudSaveStatus({ isSynced: true, time: timeStr });
-      await loadCloudList();
+      
+      // Fetch fresh cloud assessments list and calculate next sequential student ID
+      const freshAssessments = await listCloudAssessments();
+      setCloudAssessments(freshAssessments);
+      const nextNewId = await getNextSequentialStudentId(freshAssessments);
+
+      // Refresh form to a fresh blank assessment ready for the next entry
+      setData({ ...emptyAssessment, studentId: nextNewId });
+      setActiveDocId(null);
+      setActiveStep(1);
+      setCloudSaveStatus({ isSynced: false, time: '' });
+      try {
+        localStorage.removeItem('thulir_assessment_current');
+      } catch (e) {
+        // ignore
+      }
 
       if (validation.status === 'existing_demographics_updated') {
         alert(
-          `Assessment for "${payload.name}" successfully saved to Cloud!\nDocument ID: ${savedDocId}\n\nMaster profile updated: Demographic changes (DOB, diagnosis, parents/guardians, or address) have been synchronized across the portal.`
+          `Assessment for "${payload.name}" successfully saved to Cloud!\nDocument ID: ${savedDocId}\n\nMaster profile updated: Demographic changes (DOB, diagnosis, parents/guardians, or address) have been synchronized across the portal.\n\nA fresh blank assessment has been opened with next ID (${nextNewId}).`
         );
       } else if (validation.status === 'new_unique') {
         alert(
-          `Assessment for new student "${payload.name}" (ID: ${payload.studentId}) successfully registered & saved to Cloud!\nDocument ID: ${savedDocId}`
+          `Assessment for new student "${payload.name}" (ID: ${payload.studentId}) successfully registered & saved to Cloud!\nDocument ID: ${savedDocId}\n\nA fresh blank assessment has been opened with next ID (${nextNewId}).`
         );
       } else {
-        alert(`Assessment for "${payload.name || 'Student'}" successfully saved to Cloud!\nDocument ID: ${savedDocId}`);
+        alert(
+          `Assessment for "${payload.name || 'Student'}" successfully saved to Cloud!\nDocument ID: ${savedDocId}\n\nA fresh blank assessment has been opened with next ID (${nextNewId}).`
+        );
       }
     } catch (err: any) {
       console.error('Save to cloud failed:', err);
