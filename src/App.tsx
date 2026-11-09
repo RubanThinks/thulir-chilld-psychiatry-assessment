@@ -15,6 +15,7 @@ import { StudentDirectory } from './components/records/StudentDirectory';
 import {
   listCloudAssessments,
   saveAssessmentToCloud,
+  deleteAssessmentFromCloud,
   type CloudAssessmentSummary,
 } from './services/firebase';
 import { jsPDF } from 'jspdf';
@@ -38,6 +39,7 @@ import {
   Users,
   Save,
   CheckCircle2,
+  Trash2,
 } from 'lucide-react';
 
 const SECTIONS = [
@@ -208,6 +210,34 @@ export function App() {
       } catch (e) {
         // ignore
       }
+    }
+  };
+
+  const handleDeleteActiveAssessment = async () => {
+    if (!activeDocId) return;
+    const studentName = data.name || 'this student';
+    if (
+      !confirm(
+        `Are you sure you want to permanently delete the assessment for "${studentName}" (Cloud ID: ${activeDocId}) from Firebase Cloud?\n\nThis cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await deleteAssessmentFromCloud(activeDocId);
+      setData(emptyAssessment);
+      setActiveDocId(null);
+      setCloudSaveStatus({ isSynced: false, time: '' });
+      try {
+        localStorage.removeItem('thulir_assessment_current');
+      } catch (e) {
+        // ignore
+      }
+      await loadCloudList();
+      alert(`Assessment for "${studentName}" has been permanently deleted from Firebase Cloud.`);
+    } catch (err: any) {
+      alert(`Failed to delete assessment: ${err.message || 'Firebase error'}`);
     }
   };
 
@@ -418,6 +448,17 @@ export function App() {
                 <RotateCcw className="w-4 h-4" />
                 <span>New Assessment</span>
               </button>
+
+              {activeDocId && (
+                <button
+                  onClick={handleDeleteActiveAssessment}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-bold text-red-700 hover:text-white hover:bg-red-700 bg-red-50 border border-red-300 rounded transition-none shadow-xs"
+                  title="Permanently delete this opened assessment from Firebase Cloud"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Delete Record</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -487,11 +528,23 @@ export function App() {
                   handleResetForm();
                   setMobileMenuOpen(false);
                 }}
-                className="px-3 py-2 text-xs font-bold text-red-800 bg-red-100 border border-red-300 rounded w-full inline-flex items-center justify-center gap-1.5"
+                className="px-3 py-2 text-xs font-bold text-slate-800 bg-slate-100 border border-slate-300 rounded w-full inline-flex items-center justify-center gap-1.5"
               >
                 <RotateCcw className="w-4 h-4" />
                 New Blank Assessment
               </button>
+              {activeDocId && (
+                <button
+                  onClick={() => {
+                    handleDeleteActiveAssessment();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="px-3 py-2 text-xs font-bold text-red-800 bg-red-100 border border-red-300 rounded w-full inline-flex items-center justify-center gap-1.5"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Active Cloud Record
+                </button>
+              )}
             </div>
             <div className="text-xs text-slate-700 flex items-center justify-between font-medium pt-1">
               <span>Auto-saved to device draft</span>

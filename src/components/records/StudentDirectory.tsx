@@ -658,10 +658,11 @@ export const StudentDirectory: React.FC<Props> = ({
                               <button
                                 onClick={(e) => handleDeleteAssessment(evalItem.id, e)}
                                 disabled={deletingId === evalItem.id}
-                                className="p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 rounded border border-transparent hover:border-red-200 transition-none"
-                                title="Delete this assessment record from Firebase"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-red-700 hover:text-white hover:bg-red-700 bg-red-50 border border-red-300 rounded text-xs font-bold transition-none shadow-2xs"
+                                title="Permanently delete this mistake / assessment from Firebase Cloud"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
+                                <span>{deletingId === evalItem.id ? 'Deleting...' : 'Delete'}</span>
                               </button>
                             </div>
                           </div>
